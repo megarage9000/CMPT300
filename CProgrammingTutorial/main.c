@@ -4,6 +4,9 @@
 #define UPPER 300   // upper limit
 #define STEP 20     // step
 
+#define IN 1 // inside a word
+#define OUT 0 // outside a word
+
 int main() {
     printf("hello, world\n");
     
@@ -35,4 +38,89 @@ int main() {
     for(celsius = 0; celsius <= UPPER; celsius = celsius + STEP) {
         printf("%3.0f\t%6.2f\n", ((celsius * 9) / 5) + 32, celsius);
     }
+
+    // // inputting and outputing
+    // int c; // We use an int to store returned getchar() values so we can compare
+    //        // returned values to EOF constant in stdio.h
+
+    // while((c = getchar())!= EOF) { // Precedence
+    //     putchar(c);                // EOF info: https://stackoverflow.com/questions/4358728/end-of-file-eof-in-c
+    // }
+
+    // // counting characters
+    // double nc;
+
+    // for(nc = 0; getchar() != EOF; ++nc); // Do CTRL + D to simulate EOF
+    
+    // printf("%.0f\n" ,nc); 
+
+    // // line counting 
+    // int c, nl, b, t;
+
+    // nl = 0;
+    // while((c = getchar()) != EOF){
+    //     if(c == '\n') // Character constant
+    //         ++nl;
+    //     else if(c == ' ')
+    //         ++b;
+    //     if(c == '\t')
+    //         ++t;
+    // }
+    // printf("new lines = %d\n", nl);
+    // printf("blanks = %d\n", b);
+    // printf("tabs = %d\n", t);
+
+    // exercise 1.9 
+    // int c, prev;
+    // while((c = getchar()) != EOF){
+    //     if(prev != ' ')
+    //         putchar(c);
+    //     prev = c;
+    // }
+    
+    // exercise 1.10
+    // int c;
+    // while((c = getchar()) != EOF) {
+    //     if(c == '\t'){
+    //         putchar('\\');
+    //         putchar('t');
+    //     }
+    //     else if(c == '\b'){
+    //         putchar('\\');
+    //         putchar('b');
+    //     }
+    //     else if(c == '\\'){
+    //         putchar('\\');
+    //         putchar('\\');
+    //     }
+    //      else {
+    //          putchar(c);
+    //      }
+        
+    // }
+     
+     // Word counting
+
+     int c, nl, nw, nc, state;
+
+     state = OUT;
+
+     nl = nw = nc = 0;
+
+     while((c = getchar()) != EOF) {
+        ++nc; 
+
+        if(c == '\n') 
+            ++nl;
+
+        if (c == ' ' || c == '\n' || c == '\t')
+            state = OUT;
+
+        else if(state == OUT) {
+            state = IN;
+            ++nw;
+        }
+    }
+
+    printf("%d %d %d\n", nl, nw, nc);
 }
