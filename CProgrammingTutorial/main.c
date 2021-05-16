@@ -101,26 +101,26 @@ int main() {
      
      // Word counting
 
-     int c, nl, nw, nc, state;
+    //  int c, nl, nw, nc, state;
 
-     state = OUT;
+    //  state = OUT;
 
-     nl = nw = nc = 0;
+    //  nl = nw = nc = 0;
 
-     while((c = getchar()) != EOF) {
-        ++nc; 
+    //  while((c = getchar()) != EOF) {
+    //     ++nc; 
 
-        if(c == '\n') 
-            ++nl;
+    //     if(c == '\n') 
+    //         ++nl;
 
-        if (c == ' ' || c == '\n' || c == '\t')
-            state = OUT;
+    //     if (c == ' ' || c == '\n' || c == '\t')
+    //         state = OUT;
 
-        else if(state == OUT) {
-            state = IN;
-            ++nw;
-        }
-    }
+    //     else if(state == OUT) {
+    //         state = IN;
+    //         ++nw;
+    //     }
+    // }
 
-    printf("%d %d %d\n", nl, nw, nc);
+    // printf("%d %d %d\n", nl, nw, nc);
 }
