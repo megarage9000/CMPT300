@@ -11,6 +11,9 @@
 
 typedef struct Node_s Node;
 struct Node_s {
+    Node * prev;
+    void * item;
+    Node * next;
     // TODO: You should change this
 };
 
@@ -18,18 +21,28 @@ enum ListOutOfBounds {
     LIST_OOB_START,
     LIST_OOB_END
 };
+
 typedef struct List_s List;
 struct List_s{
+    Node * head;
+    Node * tail;
+    Node * current;
+    ListOutOfBounds status;
     // TODO: You should change this!
 };
 
 // Maximum number of unique lists the system can support
 // (You may modify this, but reset the value to 10 when handing in your assignment)
 #define LIST_MAX_NUM_HEADS 10
+List lists[LIST_MAX_NUM_HEADS];
+List * freeLists[LIST_MAX_NUM_HEADS]; // Stack like structure to store free list pointers
+
 
 // Maximum total number of nodes (statically allocated) to be shared across all lists
 // (You may modify this, but reset the value to 100 when handing in your assignment)
 #define LIST_MAX_NUM_NODES 100
+Node nodes[LIST_MAX_NUM_NODES];
+Node * freeNodes[LIST_MAX_NUM_NODES]; // Stack like structure to store free node pointers
 
 // General Error Handling:
 // Client code is assumed never to call these functions with a NULL List pointer, or 
