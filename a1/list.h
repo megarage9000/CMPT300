@@ -34,15 +34,16 @@ struct List_s{
 // Maximum number of unique lists the system can support
 // (You may modify this, but reset the value to 10 when handing in your assignment)
 #define LIST_MAX_NUM_HEADS 10
-List lists[LIST_MAX_NUM_HEADS];
-List * freeLists[LIST_MAX_NUM_HEADS]; // Stack like structure to store free list pointers
-
+static List lists[LIST_MAX_NUM_HEADS];
+static List * freeLists[LIST_MAX_NUM_HEADS]; // Stack like structure to store free list pointers
+static int freeListIndex = 0;
 
 // Maximum total number of nodes (statically allocated) to be shared across all lists
 // (You may modify this, but reset the value to 100 when handing in your assignment)
 #define LIST_MAX_NUM_NODES 100
-Node nodes[LIST_MAX_NUM_NODES];
-Node * freeNodes[LIST_MAX_NUM_NODES]; // Stack like structure to store free node pointers
+static Node nodes[LIST_MAX_NUM_NODES];
+static Node * freeNodes[LIST_MAX_NUM_NODES]; // Stack like structure to store free node pointers
+static int freeNodeIndex = 0; 
 
 // General Error Handling:
 // Client code is assumed never to call these functions with a NULL List pointer, or 
