@@ -1,5 +1,6 @@
 #include <stdio.h>
+#include "list.h"
 
 int main() {
-    printf("hello world!");
+    List * list = List_create();
 }

@@ -27,7 +27,6 @@ struct List_s{
     Node * head;
     Node * tail;
     Node * current;
-    ListOutOfBounds status;
     // TODO: You should change this!
 };
 
