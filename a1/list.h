@@ -9,6 +9,8 @@
 #define LIST_SUCCESS 0
 #define LIST_FAIL -1
 
+#define LIST_INITIALIZED -3
+
 typedef struct Node_s Node;
 struct Node_s {
     Node * prev;
@@ -44,6 +46,7 @@ static Node nodes[LIST_MAX_NUM_NODES];
 static Node * freeNodes[LIST_MAX_NUM_NODES]; // Stack like structure to store free node pointers
 static int freeNodeIndex = 0; 
 
+static int listInit = 0;
 // General Error Handling:
 // Client code is assumed never to call these functions with a NULL List pointer, or 
 // bad List pointer. If it does, any behaviour is permitted (such as crashing).
