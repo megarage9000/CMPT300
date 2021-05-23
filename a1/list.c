@@ -10,15 +10,27 @@ List* List_create() {
             freeLists[i] = &lists[i];
         }
 
-        freeListIndex = LIST_MAX_NUM_HEADS - 1;
+        lists[LIST_MAX_NUM_HEADS] = (List) {
+            NULL, NULL, NULL
+        };
+        freeNodes = &lists[LIST_MAX_NUM_HEADS];
 
-        for(int i = 0; i < LIST_MAX_NUM_NODES; i++ ) {
-            nodes[i] = (Node) { 
+        Node * prev = NULL;
+        for(int i = 0; i < LIST_MAX_NUM_NODES; i++){
+            nodes[i] = (Node) {
                 NULL, NULL, NULL
             };
-            freeNodes[i] = &nodes[i];
+            if(prev != NULL) {
+                prev->next = &nodes[i];
+                nodes[i].prev = prev;
+            }
+
+            prev = &nodes[i];
         }
-        freeNodeIndex = LIST_MAX_NUM_NODES - 1;
+
+        freeNodes->head = &nodes[0];
+        freeNodes->tail = &nodes[LIST_MAX_NUM_NODES];
+
     }
 
     List * listToReturn = freeLists[freeListIndex--];

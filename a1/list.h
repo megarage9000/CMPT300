@@ -35,7 +35,7 @@ struct List_s{
 // Maximum number of unique lists the system can support
 // (You may modify this, but reset the value to 10 when handing in your assignment)
 #define LIST_MAX_NUM_HEADS 10
-static List lists[LIST_MAX_NUM_HEADS];
+static List lists[LIST_MAX_NUM_HEADS + 1];
 static List * freeLists[LIST_MAX_NUM_HEADS]; // Stack like structure to store free list pointers
 static int freeListIndex = 0;
 
@@ -43,8 +43,7 @@ static int freeListIndex = 0;
 // (You may modify this, but reset the value to 100 when handing in your assignment)
 #define LIST_MAX_NUM_NODES 100
 static Node nodes[LIST_MAX_NUM_NODES];
-static Node * freeNodes[LIST_MAX_NUM_NODES]; // Stack like structure to store free node pointers
-static int freeNodeIndex = 0; 
+static List * freeNodes;
 
 static int listInit = 0;
 // General Error Handling:
