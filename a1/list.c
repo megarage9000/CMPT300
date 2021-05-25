@@ -91,6 +91,23 @@ void returnFreeNode(Node * node) {
     }
 }
 
+// Helper functions for List_add/List_insert
+void List_add_start(List * pList, Node * newNode) {
+    Node * prevHead = pList->head;
+    pList->head = newNode;
+    pList->head->next = prevHead;
+    prevHead->prev = pList->head;
+    pList->current = pList->head;
+}
+
+void List_add_end(List * pList, Node * newNode) {
+    Node * prevTail = pList->tail;
+    pList->tail = newNode;
+    pList->tail->prev = prevTail;
+    prevTail->next = pList->tail;
+    pList->current = pList->tail;
+}
+
 // ---- List methods ---- //
 int List_count(List* pList) {
     if(isListEmpty(pList)){
@@ -169,27 +186,21 @@ int List_add(List* pList, void* pItem){
     Node * newNode = getFreeNode(pItem);
     if(newNode != NULL){
         if(pList->status == LIST_OOB_START) {
-            Node * prevHead = pList->head;
-            pList->head = newNode;
-            pList->head->next = prevHead;
-            prevHead->prev = pList->head;
-            pList->status = LIST_NOT_OOB;
-        } 
+            List_add_start(pList, newNode);
+            pList->status == LIST_NOT_OOB;
+        }
         else if(pList->status == LIST_OOB_END) {
-            Node * prevTail = pList->tail;
-            pList->tail = newNode;
-            pList->tail->prev = prevTail;
-            prevTail->next = pList->tail;
-            pList->status = LIST_NOT_OOB;
+            List_add_end(pList, newNode);
+            pList->status == LIST_NOT_OOB;
         }
         else {
-            Node * currentPrev = pList->current->prev;
-            Node * currentNext = pList->current->next;
+            Node * prevCurrent = pList->current;
+            Node * prevCurrentNext = prevCurrent->next;
             pList->current = newNode;
-            newNode->next = currentNext;
-            currentNext->prev = newNode;
-            newNode->prev = currentPrev;
-            currentPrev->next = newNode;
+            pList->current->next = prevCurrentNext;
+            prevCurrentNext->prev = pList->current;
+            pList->current->prev = prevCurrent;
+            prevCurrent->next = pList->current;
         }
         return 0;
     }
@@ -203,15 +214,36 @@ int List_add(List* pList, void* pItem){
 // If the current pointer is beyond the end of the pList, the item is added at the end. 
 // Returns 0 on success, -1 on failure.
 int List_insert(List* pList, void* pItem){
-    List_prev(pList);
-    return List_add(pList, pItem);
+    Node * newNode = getFreeNode(pItem);
+    if(newNode != NULL){
+        if(pList->status == LIST_OOB_START) {
+            List_add_start(pList, newNode);
+            pList->status == LIST_NOT_OOB;
+        }
+        else if(pList->status == LIST_OOB_END) {
+            List_add_end(pList, newNode);
+            pList->status == LIST_NOT_OOB;
+        }
+        else {
+            Node * prevCurrent = pList->current;
+            Node * prevCurrentPrev = prevCurrent->prev;
+            pList->current = newNode;
+            pList->current->prev = prevCurrentPrev;
+            prevCurrentPrev->next = pList->current;
+            pList->current->next = prevCurrent;
+            prevCurrent->prev = pList->current;
+        }
+        return 0;
+    }
+    else {
+        return -1;
+    }
 }
 
 // Adds item to the end of pList, and makes the new item the current one. 
 // Returns 0 on success, -1 on failure.
 int List_append(List* pList, void* pItem){
     List_last(pList);
-    List_next(pList);
     return List_add(pList, pItem);
 }
 
@@ -219,8 +251,7 @@ int List_append(List* pList, void* pItem){
 // Returns 0 on success, -1 on failure.
 int List_prepend(List* pList, void* pItem){
     List_first(pList);
-    List_prev(pList);
-    return List_add(pList, pItem);
+    return List_insert(pList, pItem);
 }
 
 // Return current item and take it out of pList. Make the next item the current one.
