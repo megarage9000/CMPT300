@@ -38,6 +38,7 @@ List* List_create() {
     return listToReturn;
 }
 
+// ---- Private methods ---- //
 int isListEmpty(List * pList) {
     if(pList->head == NULL && pList->tail == NULL && pList->current == NULL){
         return 1;
@@ -47,6 +48,33 @@ int isListEmpty(List * pList) {
     }
 }
 
+Node * getFreeNode() {
+    if(freeNodes->tail != NULL){
+        Node * nodeToReturn = freeNodes->tail;
+        freeNodes->tail = freeNodes->tail->prev;
+        nodeToReturn->prev = NULL;
+        nodeToReturn->next = NULL;
+        return nodeToReturn;
+    }
+    return NULL;
+}
+
+void returnFreeNode(Node * node) {
+    node->item = NULL;
+    node->next = NULL;
+    node->prev = NULL;
+    if(freeNodes->tail != NULL) {
+        Node * prevTail = freeNodes->tail;
+        freeNodes->tail = node;
+        prevTail->next = node;
+        node->prev = prevTail;
+    }
+    else{
+        freeNodes->tail = node;
+    }
+}
+
+// ---- List methods ---- //
 int List_count(List* pList) {
     if(pList->head == NULL || pList->tail == NULL){
         return 0;
@@ -120,7 +148,14 @@ void* List_curr(List* pList){
 // If the current pointer is before the start of the pList, the item is added at the start. If 
 // the current pointer is beyond the end of the pList, the item is added at the end. 
 // Returns 0 on success, -1 on failure.
-int List_add(List* pList, void* pItem);
+int List_add(List* pList, void* pItem){
+    if(pList->status == LIST_OOB_START) {
+        
+    } 
+    else if(pList->status == LIST_OOB_END) {
+
+    }
+}
 
 // Adds item to pList directly before the current item, and makes the new item the current one. 
 // If the current pointer is before the start of the pList, the item is added at the start. 
