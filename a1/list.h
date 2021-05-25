@@ -36,7 +36,6 @@ struct List_s{
 // (You may modify this, but reset the value to 10 when handing in your assignment)
 #define LIST_MAX_NUM_HEADS 10
 static List lists[LIST_MAX_NUM_HEADS + 1];
-static List * freeLists[LIST_MAX_NUM_HEADS]; // Stack like structure to store free list pointers
 static int freeListIndex = 0;
 
 // Maximum total number of nodes (statically allocated) to be shared across all lists
