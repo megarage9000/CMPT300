@@ -31,6 +31,7 @@ struct List_s{
     Node * tail;
     Node * current;
     enum ListOutOfBounds status;
+    int count;
     // TODO: You should change this!
 };
 

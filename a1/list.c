@@ -6,7 +6,7 @@ List* List_create() {
         // Allocating Lists
         for(int i = 0; i < LIST_MAX_NUM_HEADS; i++) {
             lists[i] = (List){
-                NULL, NULL, NULL, LIST_NOT_OOB
+                NULL, NULL, NULL, LIST_OOB_START, 0
              };
         }
         freeListIndex = LIST_MAX_NUM_HEADS - 1;
@@ -14,7 +14,7 @@ List* List_create() {
 
         // Allocating Nodes
         lists[LIST_MAX_NUM_HEADS] = (List) {
-            NULL, NULL, NULL, LIST_NOT_OOB
+            NULL, NULL, NULL, LIST_NOT_OOB, 0
         };
         freeNodes = &lists[LIST_MAX_NUM_HEADS];
         Node * prev = NULL;
@@ -95,17 +95,31 @@ void returnFreeNode(Node * node) {
 void List_add_start(List * pList, Node * newNode) {
     Node * prevHead = pList->head;
     pList->head = newNode;
-    pList->head->next = prevHead;
-    prevHead->prev = pList->head;
+    Link_2_nodes(pList->head, prevHead);
     pList->current = pList->head;
 }
 
 void List_add_end(List * pList, Node * newNode) {
     Node * prevTail = pList->tail;
     pList->tail = newNode;
-    pList->tail->prev = prevTail;
-    prevTail->next = pList->tail;
+    Link_2_nodes(prevTail, pList->tail);
     pList->current = pList->tail;
+}
+
+void Link_3_nodes(Node * first, Node * second, Node * third){
+    if(first != second && second != third && third != NULL) {
+        first->next = second;
+        second->prev = first;
+        second->next = third;
+        third->prev = second;
+    }
+}
+
+void Link_2_nodes(Node * first, Node * second) {
+    if(first != second && second != NULL) {
+        first->next = second;
+        second->prev = first;
+    }
 }
 
 // ---- List methods ---- //
@@ -113,12 +127,9 @@ int List_count(List* pList) {
     if(isListEmpty(pList)){
         return 0;
     }
-    Node * node = pList->head;
-    int count = 1;
-    for(; node->next != NULL; count++) {
-        node = node->next;
+    else {
+        return pList->count;
     }
-    return count;
 }
 
 // Returns a pointer to the first item in pList and makes the first item the current item.
@@ -185,23 +196,20 @@ void* List_curr(List* pList){
 int List_add(List* pList, void* pItem){
     Node * newNode = getFreeNode(pItem);
     if(newNode != NULL){
-        if(pList->status == LIST_OOB_START) {
-            List_add_start(pList, newNode);
+        if(pList->status == LIST_OOB_END || pList->current == pList->tail) {
+            List_add_end(pList, newNode);
             pList->status == LIST_NOT_OOB;
         }
-        else if(pList->status == LIST_OOB_END) {
-            List_add_end(pList, newNode);
+        else if(pList->status == LIST_OOB_START || pList->current == pList->head) {
+            List_add_start(pList, newNode);
             pList->status == LIST_NOT_OOB;
         }
         else {
             Node * prevCurrent = pList->current;
-            Node * prevCurrentNext = prevCurrent->next;
+            Link_3_nodes(prevCurrent, pList->current, prevCurrent->next);
             pList->current = newNode;
-            pList->current->next = prevCurrentNext;
-            prevCurrentNext->prev = pList->current;
-            pList->current->prev = prevCurrent;
-            prevCurrent->next = pList->current;
         }
+        pList->count++;
         return 0;
     }
     else {
@@ -216,23 +224,20 @@ int List_add(List* pList, void* pItem){
 int List_insert(List* pList, void* pItem){
     Node * newNode = getFreeNode(pItem);
     if(newNode != NULL){
-        if(pList->status == LIST_OOB_START) {
+        if(pList->status == LIST_OOB_START || pList->current == pList->head) {
             List_add_start(pList, newNode);
             pList->status == LIST_NOT_OOB;
         }
-        else if(pList->status == LIST_OOB_END) {
+        else if(pList->status == LIST_OOB_END || pList->current == pList->tail) {
             List_add_end(pList, newNode);
             pList->status == LIST_NOT_OOB;
         }
         else {
             Node * prevCurrent = pList->current;
-            Node * prevCurrentPrev = prevCurrent->prev;
+            Link_3_nodes(prevCurrent->prev, newNode, prevCurrent);
             pList->current = newNode;
-            pList->current->prev = prevCurrentPrev;
-            prevCurrentPrev->next = pList->current;
-            pList->current->next = prevCurrent;
-            prevCurrent->prev = pList->current;
         }
+        pList->count++;
         return 0;
     }
     else {
@@ -261,12 +266,8 @@ void* List_remove(List* pList){
     if(pList->status == LIST_OOB_END || pList->status == LIST_OOB_START){
         return NULL;
     }
+    
     Node * nodeToRemove = pList->current;
-    Node * currentPrev = nodeToRemove->prev;
-    void * item = nodeToRemove->item;
-    List_next(pList);
-    pList->current->prev = currentPrev;
-    currentPrev->next = pList->current;
-    returnFreeNode(nodeToRemove);
-    return item;
+
+
 }
