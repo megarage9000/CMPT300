@@ -21,7 +21,8 @@ struct Node_s {
 
 enum ListOutOfBounds {
     LIST_OOB_START,
-    LIST_OOB_END
+    LIST_OOB_END,
+    LIST_NOT_OOB
 };
 
 typedef struct List_s List;
@@ -29,6 +30,7 @@ struct List_s{
     Node * head;
     Node * tail;
     Node * current;
+    enum ListOutOfBounds status;
     // TODO: You should change this!
 };
 
