@@ -39,12 +39,13 @@ char * getHeadItem(){
 }
 
 void printList() {
-    printf("charList info: \n - count = %d \n - status = %d\n", charList->count, charList->status);
+    printf("charList info: \n - count = %d \n - status = %d\n - current item = %s\n", 
+            charList->count, charList->status, getCurrentItem());
     char * tailItem = getTailItem();
     char * headItem = getHeadItem();
     if(tailItem != NULL && headItem != NULL){
         for(int i = 0; charList->status != LIST_OOB_END; ++i){
-            printf("\t item %d = %s", i, getCurrentItem());
+            printf("\t item #%d = %s", i, getCurrentItem());
             nextItem();
         }
     }

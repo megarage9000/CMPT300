@@ -7,7 +7,8 @@ List* List_create() {
         for(int i = 0; i < LIST_MAX_NUM_HEADS; i++) {
             lists[i] = (List){
                 NULL, NULL, NULL, LIST_OOB_START, 0
-             };
+            };
+            freeLists[i] = &lists[i];
         }
         freeListIndex = LIST_MAX_NUM_HEADS - 1;
 
@@ -36,7 +37,7 @@ List* List_create() {
     }
 
     if(freeListIndex >= 0){
-        List * listToReturn = &lists[freeListIndex--];
+        List * listToReturn = freeLists[freeListIndex--];
         return listToReturn;
     }
     else {
@@ -176,6 +177,9 @@ void* List_first(List* pList) {
         return NULL;
     }
     pList->current = pList->head;
+    if(pList->status != LIST_NOT_OOB){
+        pList->status = LIST_NOT_OOB;
+    }
     return pList->head->item;
 }
 
@@ -185,6 +189,9 @@ void* List_last(List* pList){
         return NULL;
     }
     pList->current = pList->tail;
+    if(pList->status != LIST_NOT_OOB){
+        pList->status = LIST_NOT_OOB;
+    }
     return pList->tail->item;
 }
 
@@ -213,6 +220,9 @@ void* List_prev(List* pList){
 }
 
 void* List_curr(List* pList){
+    if(pList->current == NULL){
+        return NULL;
+    }
     return pList->current->item;
 }
 
@@ -325,3 +335,7 @@ void* List_remove(List* pList){
     }
     return NULL;
 }
+
+// void List_free(List* pList, FREE_FN pItemFreeFn){
+
+// }

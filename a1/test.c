@@ -2,15 +2,23 @@
 #include "list.h"
 #include "charList.h"
 
-void printListInfo(List * list);
+void getInput(char * buffer, int count);
+void printInterface();
 
 int main() {
     initialize();
     printList();
+    printInterface();
 }
 
-void printListInfo(List * list) {
-    int count = List_count(list);
-    printf("List information:\n - Address: %p\n - Count: %d\n - Head: %p\n - Tail: %p\n - Current: %p\n - Status: %d\n", 
-            (List *)list, count, (Node *)list->head, (Node * )list->tail, (Node * )list->current, list->status);
+void getInput(char * buffer, int count) {
+    printf("Enter some input:\n");
+    fgets(buffer, count, stdin);
+    buffer[strcspn(buffer, "\n")] = 0;
+}
+
+void printInterface(){
+    printf(
+        "||---Testing List class commands...---||\n - as: Add new string \n - is: Insert string \n - rs: Remove string at the current pointer \n - ni: Iterate to next item \n - pi: Iterate to previous item \n - gs: Get current string \n - ss: Get head string \n - es: Get end string \n - pl: Print list \n||---Testing List class commands...---||\n"
+    );
 }
