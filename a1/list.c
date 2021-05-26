@@ -42,7 +42,6 @@ List* List_create() {
     else {
         return NULL;
     }
-    
 }
 
 // ---- Private methods ---- //
@@ -321,6 +320,7 @@ void* List_remove(List* pList){
             pList->tail = NULL;
             pList->status = LIST_OOB_END;
         }
+        pList->count--;
         return current->item;
     }
     return NULL;

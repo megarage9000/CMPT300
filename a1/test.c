@@ -1,12 +1,12 @@
 #include <stdio.h>
 #include "list.h"
+#include "charList.h"
 
 void printListInfo(List * list);
 
 int main() {
-    List * list = List_create();
-   
-   printListInfo(list);
+    initialize();
+    printList();
 }
 
 void printListInfo(List * list) {
