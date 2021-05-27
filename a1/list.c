@@ -32,7 +32,7 @@ List* List_create() {
         }
 
         freeNodes->head = &nodes[0];
-        freeNodes->tail = &nodes[LIST_MAX_NUM_NODES];
+        freeNodes->tail = &nodes[LIST_MAX_NUM_NODES - 1];
         listInit = LIST_INITIALIZED;
     }
 
