@@ -12,10 +12,10 @@ void printInterface();
 
 int main() {
     initialize();
+    printInterface();
     int finish = 0;
     char command[2];
     while(!finish){
-        printInterface();
         getInput(command, 2);
         printf("----\nCommand = %s\n-----\n", command);
         checkCommand(command);
@@ -26,34 +26,42 @@ void checkCommand(char * buffer){
     if(strcmp(buffer,"as")  == 0){
         printf("Add\n");
         addCharItem(getInputWithValue(20));
+        printList();
     }
     else if(strcmp(buffer,"is")  == 0){
         printf("Insert\n");
         insertCharItem(getInputWithValue(20));
+        printList();
     }
     else if(strcmp(buffer,"rs")  == 0){
         printf("Remove\n");
         printf("Removed item = %s", removeCharItem());
+        printList();
     }
     else if(strcmp(buffer,"ni")  == 0){
         printf("Next\n");
         nextItem();
+        printList();
     }
     else if(strcmp(buffer,"pi")  == 0){
         printf("Previous\n");
         prevItem();
+        printList();
     }
     else if(strcmp(buffer,"gs")  == 0){
         printf("Current\n");
         printf("Current item = %s\n", getCurrentItem());
+        printList();
     }
     else if(strcmp(buffer,"ss")  == 0){
         printf("Start\n");
         printf("Head item = %s\n", getHeadItem());
+        printList();
     }
     else if(strcmp(buffer,"es")  == 0){
         printf("End\n");
         printf("Tail item = %s\n", getTailItem());
+        printList();
     }
     else if(strcmp(buffer,"pl")  == 0){
         printf("Print list\n");

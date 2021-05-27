@@ -117,7 +117,7 @@ NodeLinkStatus Unlink_node(Node * nodeToRemove, Node * prev, Node * next){
 }
 
 NodeLinkStatus Link_2_nodes(Node * first, Node * second) {
-    if(first != second && second != NULL) {
+    if(first != NULL && second != NULL) {
         first->next = second;
         second->prev = first;
         return Success;
@@ -136,10 +136,11 @@ NodeLinkStatus Link_3_nodes(Node * first, Node * second, Node * third){
     }
 }
 
-void List_add_on_empty(List *pList, Node * newNode){
+NodeLinkStatus List_add_on_empty(List *pList, Node * newNode){
     pList->head = newNode;
     pList->tail = newNode;
-    pList->current = newNode;
+    pList->status = LIST_NOT_OOB;
+    return Success;
 }
 
 NodeLinkStatus List_add_start(List * pList, Node * newNode) {
@@ -147,7 +148,7 @@ NodeLinkStatus List_add_start(List * pList, Node * newNode) {
     NodeLinkStatus status = Link_2_nodes(newNode, prevHead);
     if(status == Success){
         pList->head = newNode;
-        pList->current = pList->head;
+        pList->status = LIST_NOT_OOB;
     }
     return status;
 }
@@ -157,7 +158,7 @@ NodeLinkStatus List_add_end(List * pList, Node * newNode) {
     NodeLinkStatus status = Link_2_nodes(prevTail, newNode);
     if(status == Success){
         pList->tail = newNode;
-        pList->current = pList->tail;
+        pList->status = LIST_NOT_OOB;
     }
     return status;
 }
@@ -198,7 +199,7 @@ void* List_last(List* pList){
 void* List_next(List* pList){
     if(!isListOOB(pList)){
         pList->current = pList->current->next;
-        if(pList->tail->next == pList->current && pList->current == NULL){
+        if(pList->tail->next == pList->current && pList->tail->next == NULL){
             pList->status = LIST_OOB_END;
             return NULL;
         }
@@ -210,7 +211,7 @@ void* List_next(List* pList){
 void* List_prev(List* pList){
     if(!isListOOB(pList)){
         pList->current = pList->current->prev;
-        if(pList->head->prev == pList->current && pList->current == NULL){
+        if(pList->current == pList->head->prev && pList->head->prev == NULL){
             pList->status = LIST_OOB_START;
             return NULL;
         }
@@ -232,8 +233,7 @@ int List_add(List* pList, void* pItem){
         NodeLinkStatus linkingStatus;
         // 1. On Empty list, call add for empty lists
         if(isListEmpty(pList)){
-            List_add_on_empty(pList, newNode);
-            linkingStatus = Success;
+            linkingStatus = List_add_on_empty(pList, newNode);
         }
         // 2. If current is pointing to end or OOB end, make the new node the tail
         else if(pList->status == LIST_OOB_END || pList->current == pList->tail) {
@@ -246,11 +246,10 @@ int List_add(List* pList, void* pItem){
         // 4. If current is neither head/tail or is the pList empty, do normal add
         else {
             Node * prevCurrent = pList->current;
-            linkingStatus = Link_3_nodes(prevCurrent, pList->current, prevCurrent->next);
+            linkingStatus = Link_3_nodes(prevCurrent, newNode, prevCurrent->next);
         }
 
         if(linkingStatus == Success) {
-            pList->status = LIST_NOT_OOB;
             pList->current = newNode;
             pList->count++;
             return 0;
@@ -270,8 +269,7 @@ int List_insert(List* pList, void* pItem){
         NodeLinkStatus linkingStatus;
         // 1. On Empty list, call add for empty lists
         if(isListEmpty(pList)){
-            List_add_on_empty(pList, newNode);
-            linkingStatus = Success;
+            linkingStatus = List_add_on_empty(pList, newNode);
         }
         // 2. If current is pointing to start or OOB start, make the new node the head
         else if(pList->status == LIST_OOB_START || pList->current == pList->head) {
@@ -285,7 +283,6 @@ int List_insert(List* pList, void* pItem){
         else {
             Node * prevCurrent = pList->current;
             linkingStatus = Link_3_nodes(prevCurrent->prev, newNode, prevCurrent);
-            pList->current = newNode;
         }
 
         if(linkingStatus == Success) {

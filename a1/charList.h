@@ -28,4 +28,6 @@ char * getHeadItem();
 
 void printList();
 
+void printNodeInfo(Node * node);
+
 #endif
