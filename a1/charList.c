@@ -52,10 +52,14 @@ void printList() {
         printf("\n");
         startingNode = startingNode->next;
     }
-    printf(" - (Head node) ");
-    printNodeInfo(head);
-    printf(" - (Tail node) ");
-    printNodeInfo(tail);
+
+    if(head != NULL && tail != NULL){
+        printf(" - (Head node) ");
+        printNodeInfo(head);
+        printf(" - (Tail node) ");
+        printNodeInfo(tail);
+    }
+    
     printf("---------------------------\n");
 }
 
