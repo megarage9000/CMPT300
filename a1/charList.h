@@ -14,6 +14,8 @@ void initialize();
 
 List * createCharList();
 
+int addNewList();
+
 List * getListFromIndex(int index);
 
 void addCharItem(List * charList, char * item);
@@ -45,6 +47,8 @@ bool checkMatchingChars(void * item1, void * item2);
 char * findItem(List * charList, char * matchingString);
 
 void printList(List * charList);
+
+void printAllLists();
 
 void printNodeInfo(Node * node);
 

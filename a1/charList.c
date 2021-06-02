@@ -10,6 +10,19 @@ List * createCharList(){
     return List_create();
 }
 
+int addNewList(){
+    List * list = createCharList();
+    if(list != NULL){
+        for(int i = 0; i < LIST_MAX_NUM_HEADS; i++){
+            if(charLists[i] == NULL) {
+                charLists[i] = list;
+                return i;
+            }
+        }
+    }   
+    return -1;
+}
+
 List * getListFromIndex(int index){
     return charLists[index];
 }
@@ -55,7 +68,7 @@ void concatLists(List * charList1, List * charList2){
 }
 
 void freeItem(void * item){
-    free(item);
+    free((char *)item);
 }
 
 void freeList(List * charList, int index){
@@ -63,7 +76,7 @@ void freeList(List * charList, int index){
 }
 
 bool checkMatchingChars(void * item1, void * item2){
-    return strcmp((char *)item1, (char *)item2);
+    return (strcmp((char *)item1, (char *)item2) == 0);
 }
 
 char * findItem(List * charList, char * matchingString){
@@ -93,6 +106,15 @@ void printList(List * charList) {
     }
     
     printf("---------------------------\n");
+}
+
+void printAllLists() {
+    for(int i = 0; i < LIST_MAX_NUM_HEADS; i++){
+        List * list = charLists[i];
+        if(list != NULL){
+            printList(list);
+        }
+    }
 }
 
 void printNodeInfo(Node * node){

@@ -26,6 +26,14 @@ int main() {
 }
 
 void checkCommand(char * buffer, int listIndex){
+
+    if(strcmp(buffer, "cl") == 0) {
+        int index = addNewList();
+        printf("New list index = %d\n", index);
+        printAllLists();
+        return;
+    }
+
     if(listIndex > LIST_MAX_NUM_HEADS || listIndex < 0){
         printf("Index out of bounds\n");
         return;
@@ -97,6 +105,6 @@ char * getInputWithValue(int bufferLength){
 
 void printInterface(){
     printf(
-        "\n||---Testing List class commands---||\n - as: Add new string \n - is: Insert string \n - rs: Remove string at the current pointer \n - ni: Iterate to next item \n - pi: Iterate to previous item \n - gs: Get current string \n - ss: Get head string \n - es: Get end string \n - pl: Print list \n||---Testing List class commands---||\n\n"
+        "\n||---Testing List class commands---||\n - as: Add new string \n - is: Insert string \n - rs: Remove string at the current pointer \n - ni: Iterate to next item \n - pi: Iterate to previous item \n - gs: Get current string \n - ss: Get head string \n - es: Get end string \n - pl: Print list \n - cl: Create List \n - c2: Concatenate Lists \n - fl: Free List: \n - sl: Search List\n - pa: Print all Lists \n ||---Testing List class commands---||\n\n"
     );
 }
