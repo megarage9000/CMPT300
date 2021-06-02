@@ -6,27 +6,31 @@
 #include <stdio.h>
 #include "list.h"
 
-static List * charList = NULL;
+static List * charLists[LIST_MAX_NUM_HEADS];
 
 void initialize();
 
-void addCharItem(char * item);
+List * createCharList();
 
-void insertCharItem(char * item);
+List * getListFromIndex(int index);
 
-char * removeCharItem();
+void addCharItem(List * charList, char * item);
 
-char * nextItem();
+void insertCharItem(List * charList, char * item);
 
-char * prevItem();
+char * removeCharItem(List * charList);
 
-char * getCurrentItem();
+char * nextItem(List * charList);
 
-char * getTailItem();
+char * prevItem(List * charList);
 
-char * getHeadItem();
+char * getCurrentItem(List * charList);
 
-void printList();
+char * getTailItem(List * charList);
+
+char * getHeadItem(List * charList);
+
+void printList(List * charList);
 
 void printNodeInfo(Node * node);
 

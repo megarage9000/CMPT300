@@ -1,47 +1,55 @@
 #include "charList.h"
 
-void initialize(){
-    if(charList == NULL){
-        charList = List_create();
+void initialize() {
+    for(int i = 0; i < LIST_MAX_NUM_HEADS; i++){
+        charLists[i] = NULL;
     }
 }
 
-void addCharItem(char * item){
+List * createCharList(){
+    return List_create();
+}
+
+List * getListFromIndex(int index){
+    return charLists[index];
+}
+
+void addCharItem(List * charList, char * item){
     List_add(charList, (void *)item);
 }
 
-void insertCharItem(char * item){
+void insertCharItem(List * charList, char * item){
     List_insert(charList, (void *)item);
 }
 
-char * removeCharItem(){
+char * removeCharItem(List * charList){
     return (char *)List_remove(charList);
 }
 
-char * nextItem(){
+char * nextItem(List * charList){
     return (char *)List_next(charList);
 }
 
-char * prevItem(){
+char * prevItem(List * charList){
     return (char *)List_prev(charList);
 }
 
-char * getCurrentItem(){
+char * getCurrentItem(List * charList){
     return (char *)List_curr(charList);
 }
 
-char * getTailItem(){
+char * getTailItem(List * charList){
     return (char *)List_last(charList);
 }
 
-char * getHeadItem(){
+char * getHeadItem(List * charList){
     return (char *)List_first(charList);
 }
 
-void printList() {
+void printList(List * charList) {
     printf("---------------------------\n");
     printf("charList info: \n - count = %d \n - status = %d\n - current item = %s\n", 
-            charList->count, charList->status, getCurrentItem());
+            charList->count, charList->status, getCurrentItem(charList));
     Node * startingNode = charList->head;
     Node * head = startingNode;
     Node * tail = charList->tail;

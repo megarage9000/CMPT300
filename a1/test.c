@@ -5,7 +5,7 @@
 #include "stdlib.h"
 
 
-void checkCommand(char * buffer);
+void checkCommand(char * buffer, int listIndex);
 void getInput(char * buffer, int count);
 char * getInputWithValue(int bufferLength);
 void printInterface();
@@ -15,57 +15,71 @@ int main() {
     printInterface();
     int finish = 0;
     char command[2];
+    int listIndex;
     while(!finish){
+        printf("----\nEnter a command\n-----\n");
         getInput(command, 2);
-        printf("----\nCommand = %s\n-----\n", command);
-        checkCommand(command);
+        printf("----\nCommand = %s, select a list index (Enter some value between 0 to %d)\n-----\n", command, LIST_MAX_NUM_HEADS);
+        listIndex = (int)strtol(getInputWithValue(2), (char**)NULL, 10);
+        checkCommand(command, listIndex);
     }
 }
 
-void checkCommand(char * buffer){
-    if(strcmp(buffer,"as")  == 0){
+void checkCommand(char * buffer, int listIndex){
+    if(listIndex > LIST_MAX_NUM_HEADS || listIndex < 0){
+        printf("Index out of bounds\n");
+        return;
+    }
+
+    List * charList = getListFromIndex(listIndex);
+
+    if(charList == NULL){
+        printf("List does not exist!\n");
+        return;
+    }
+    else if(strcmp(buffer,"as")  == 0){
         printf("Add\n");
-        addCharItem(getInputWithValue(20));
-        printList();
+        addCharItem(charList, getInputWithValue(20));
+        printList(charList);
     }
     else if(strcmp(buffer,"is")  == 0){
         printf("Insert\n");
-        insertCharItem(getInputWithValue(20));
-        printList();
+        insertCharItem(charList, getInputWithValue(20));
+        printList(charList);
     }
     else if(strcmp(buffer,"rs")  == 0){
         printf("Remove\n");
-        printf("Removed item = %s", removeCharItem());
-        printList();
+        printf("Removed item = %s", removeCharItem(charList));
+        printList(charList);
     }
     else if(strcmp(buffer,"ni")  == 0){
         printf("Next\n");
-        nextItem();
-        printList();
+        nextItem(charList);
+        printList(charList);
     }
     else if(strcmp(buffer,"pi")  == 0){
         printf("Previous\n");
-        prevItem();
-        printList();
+        prevItem(charList);
+        printList(charList);
     }
     else if(strcmp(buffer,"gs")  == 0){
         printf("Current\n");
-        printf("Current item = %s\n", getCurrentItem());
-        printList();
+        printf("Current item = %s\n", getCurrentItem(charList));
+        printList(charList);
     }
     else if(strcmp(buffer,"ss")  == 0){
         printf("Start\n");
-        printf("Head item = %s\n", getHeadItem());
-        printList();
+        printf("Head item = %s\n", getHeadItem(charList));
+        printList(charList);
     }
     else if(strcmp(buffer,"es")  == 0){
         printf("End\n");
-        printf("Tail item = %s\n", getTailItem());
-        printList();
+        printf("Tail item = %s\n", getTailItem(charList));
+        printList(charList);
     }
     else if(strcmp(buffer,"pl")  == 0){
         printf("Print list\n");
-        printList();
+        printList(charList);
     }
 }
 
