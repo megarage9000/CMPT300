@@ -4,6 +4,8 @@
 #define CHAR_LIST
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include "list.h"
 
 static List * charLists[LIST_MAX_NUM_HEADS];
@@ -29,6 +31,18 @@ char * getCurrentItem(List * charList);
 char * getTailItem(List * charList);
 
 char * getHeadItem(List * charList);
+
+char * trim(List * charList);
+
+void concatLists(List * charList1, List * charList2);
+
+void freeItem(void * item);
+
+void freeList(List * charList, int index);
+
+bool checkMatchingChars(void * item1, void * item2);
+
+char * findItem(List * charList, char * matchingString);
 
 void printList(List * charList);
 

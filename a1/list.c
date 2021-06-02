@@ -1,61 +1,17 @@
 #include "list.h"
 #include <stdio.h>
 
-List* List_create() {
-    if(listInit != LIST_INITIALIZED) {
-        // Allocating Lists
-        for(int i = 0; i < LIST_MAX_NUM_HEADS; i++) {
-            lists[i] = (List){
-                NULL, NULL, NULL, LIST_OOB_START, 0
-            };
-            freeLists[i] = &lists[i];
-        }
-        freeListIndex = LIST_MAX_NUM_HEADS - 1;
-
-
-        // Allocating Nodes
-        lists[LIST_MAX_NUM_HEADS] = (List) {
-            NULL, NULL, NULL, LIST_NOT_OOB, 0
-        };
-        freeNodes = &lists[LIST_MAX_NUM_HEADS];
-        Node * prev = NULL;
-        for(int i = 0; i < LIST_MAX_NUM_NODES; i++){
-            nodes[i] = (Node) {
-                NULL, NULL, NULL
-            };
-            if(prev != NULL) {
-                prev->next = &nodes[i];
-                nodes[i].prev = prev;
-            }
-
-            prev = &nodes[i];
-        }
-
-        freeNodes->head = &nodes[0];
-        freeNodes->tail = &nodes[LIST_MAX_NUM_NODES - 1];
-        listInit = LIST_INITIALIZED;
-    }
-
-    if(freeListIndex >= 0){
-        List * listToReturn = freeLists[freeListIndex--];
-        return listToReturn;
-    }
-    else {
-        return NULL;
-    }
-}
-
 // ---- Private methods ---- //
-int isListEmpty(List * pList) {
-    if(pList->head == NULL && pList->tail == NULL && pList->current == NULL && pList->count == 0){
-        return 1;
+bool isListEmpty(List * pList) {
+    if(pList == NULL || (pList->head == NULL && pList->tail == NULL && pList->current == NULL && pList->count == 0)){
+        return true;
     }
     else {
-        return 0;
+        return false;
     }
 }
 
-int isListOOB(List * pList) {
+bool isListOOB(List * pList) {
     return (pList->status == LIST_OOB_END || pList->status == LIST_OOB_START);
 }
 
@@ -89,6 +45,33 @@ void returnFreeNode(Node * node) {
     else{
         freeNodes->tail = node;
     }
+}
+
+List * getFreeList(){
+    if(freeListIndex >= 0){
+        List * listToReturn = freeLists[freeListIndex--];
+        return listToReturn;
+    }
+    return NULL;
+}
+
+bool returnFreeList(List *pList){
+    if(pList != NULL){
+        pList->count = 0;
+        pList->current = NULL;
+        pList->head = NULL;
+        pList->tail = NULL;
+        pList->status = LIST_NOT_OOB;
+
+        if(freeListIndex < LIST_MAX_NUM_HEADS - 1){
+            freeLists[freeListIndex++] = pList;
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+    return false;
 }
 
 void Unlink_node(Node * nodeToRemove, Node * prev, Node * next){
@@ -132,6 +115,44 @@ void List_add_on_empty(List *pList, Node * newNode){
     pList->status = LIST_NOT_OOB;
 }
 // ---- List methods ---- //
+List* List_create() {
+    if(listInit != LIST_INITIALIZED) {
+        // Allocating Lists
+        for(int i = 0; i < LIST_MAX_NUM_HEADS; i++) {
+            lists[i] = (List){
+                NULL, NULL, NULL, LIST_OOB_START, 0
+            };
+            freeLists[i] = &lists[i];
+        }
+        freeListIndex = LIST_MAX_NUM_HEADS - 1;
+
+
+        // Allocating Nodes
+        lists[LIST_MAX_NUM_HEADS] = (List) {
+            NULL, NULL, NULL, LIST_NOT_OOB, 0
+        };
+        freeNodes = &lists[LIST_MAX_NUM_HEADS];
+        Node * prev = NULL;
+        for(int i = 0; i < LIST_MAX_NUM_NODES; i++){
+            nodes[i] = (Node) {
+                NULL, NULL, NULL
+            };
+            if(prev != NULL) {
+                prev->next = &nodes[i];
+                nodes[i].prev = prev;
+            }
+
+            prev = &nodes[i];
+        }
+
+        freeNodes->head = &nodes[0];
+        freeNodes->tail = &nodes[LIST_MAX_NUM_NODES - 1];
+        listInit = LIST_INITIALIZED;
+    }
+
+    return getFreeList();
+}
+
 int List_count(List* pList) {
     if(isListEmpty(pList)){
         return 0;
@@ -292,6 +313,61 @@ void* List_remove(List* pList){
     return NULL;
 }
 
-// void List_free(List* pList, FREE_FN pItemFreeFn){
+void List_concat(List* pList1, List* pList2){
+    if(!isListEmpty(pList2)){
+        if(isListEmpty(pList1)){
+            pList1->head = pList2->head;
+            pList1->tail = pList2->tail;
+            pList1->current = pList2->current;
+            pList1->count = pList2->count;
+            pList1->status = pList2->status;
+        }
+        else {
+            Link_2_nodes(pList1->tail, pList2->head);
+            pList1->count += pList2->count;
+            if(pList1->status == LIST_OOB_END){
+                pList1->current = pList2->head;
+            }
+        }
+        returnFreeList(pList2);
+    }
+}
 
-// }
+typedef void (*FREE_FN)(void* pItem);
+void List_free(List* pList, FREE_FN pItemFreeFn){
+    if(!isListEmpty(pList)){
+        List_first(pList);
+        while(pList->current != NULL){
+            Node * node = pList->current;
+            void * item = node->item;
+            pItemFreeFn(item);
+            List_next(pList);
+            returnFreeNode(node);
+        }
+    }
+    returnFreeList(pList);
+}
+
+void* List_trim(List* pList){
+    List_last(pList);
+    return List_remove(pList);
+}
+
+typedef bool (*COMPARATOR_FN)(void* pItem, void* pComparisonArg);
+void* List_search(List* pList, COMPARATOR_FN pComparator, void* pComparisonArg){
+    if(!isListEmpty(pList)){
+        List_first(pList);
+        void * item = NULL;
+        while(pList->current != NULL){
+            item = List_curr(pList);
+            if(pComparator(item, pComparisonArg)){
+                return item;
+            }
+            else{
+                List_next(pList);
+            }
+        }
+        return NULL;
+    }
+    return NULL;
+}

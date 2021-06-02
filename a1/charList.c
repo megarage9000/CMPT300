@@ -46,6 +46,30 @@ char * getHeadItem(List * charList){
     return (char *)List_first(charList);
 }
 
+char * trim(List * charList){
+    return (char *)List_trim(charList);
+}
+
+void concatLists(List * charList1, List * charList2){
+    List_concat(charList1, charList2);
+}
+
+void freeItem(void * item){
+    free(item);
+}
+
+void freeList(List * charList, int index){
+    List_free(charList, freeItem);
+}
+
+bool checkMatchingChars(void * item1, void * item2){
+    return strcmp((char *)item1, (char *)item2);
+}
+
+char * findItem(List * charList, char * matchingString){
+    return (char *)List_search(charList, checkMatchingChars, matchingString);
+}
+
 void printList(List * charList) {
     printf("---------------------------\n");
     printf("charList info: \n - count = %d \n - status = %d\n - current item = %s\n", 
