@@ -36,11 +36,11 @@ char * getHeadItem(List * charList);
 
 char * trim(List * charList);
 
-void concatLists(List * charList1, List * charList2);
+void concatLists(List * charList1, int listIndex);
 
 void freeItem(void * item);
 
-void freeList(List * charList);
+void freeList(List * charList, int listIndex);
 
 bool checkMatchingChars(void * item1, void * item2);
 
@@ -51,5 +51,8 @@ void printList(List * charList);
 void printAllLists();
 
 void printNodeInfo(Node * node);
+
+void cleanUp();
+
 
 #endif

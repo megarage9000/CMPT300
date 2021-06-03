@@ -63,16 +63,18 @@ char * trim(List * charList){
     return (char *)List_trim(charList);
 }
 
-void concatLists(List * charList1, List * charList2){
-    List_concat(charList1, charList2);
+void concatLists(List * charList1, int listIndex){
+    List_concat(charList1, getListFromIndex(listIndex));
+    charLists[listIndex] = NULL;
 }
 
 void freeItem(void * item){
-    free((char *)item);
+    free(item);
 }
 
-void freeList(List * charList){
+void freeList(List * charList, int listIndex){
     List_free(charList, freeItem);
+    charLists[listIndex] = NULL;
 }
 
 bool checkMatchingChars(void * item1, void * item2){
@@ -112,7 +114,7 @@ void printAllLists() {
     for(int i = 0; i < LIST_MAX_NUM_HEADS; i++){
         List * list = charLists[i];
         if(list != NULL){
-            printf("List index %d: ", i);
+            printf("List index %d: \n", i);
             printList(list);
         }
     }
@@ -120,4 +122,13 @@ void printAllLists() {
 
 void printNodeInfo(Node * node){
     printf("Node information: prev: %p, next: %p, item: %s\n", node->prev, node->next, (char *)node->item);
+}
+
+void cleanUp(){
+    for(int i = 0; i < LIST_MAX_NUM_HEADS; i++){
+        List * list = charLists[i];
+        if(list != NULL){
+            freeList(list, i);
+        }
+    }
 }

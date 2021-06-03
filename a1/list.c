@@ -300,9 +300,11 @@ void* List_remove(List* pList){
             pList->current = currentPrev;
         }
 
-        if(current == pList->head){
-            pList->head = currentNext;
+        else {
             pList->current = currentNext;
+            if(current == pList->head){
+                pList->head = currentNext;
+            }
         }
     
         pList->count--;
@@ -342,8 +344,7 @@ void List_free(List* pList, FREE_FN pItemFreeFn){
             Node * node = pList->current;
             void * item = node->item;
             pItemFreeFn(item);
-            List_next(pList);
-            returnFreeNode(node);
+            List_remove(pList);
         }
     }
     returnFreeList(pList);

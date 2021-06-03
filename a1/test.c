@@ -1,11 +1,18 @@
 #include <stdio.h>
 #include <string.h>
+#include <stdbool.h>
 #include "list.h"
 #include "charList.h"
 #include "stdlib.h"
 
+#define COMMAND_LENGTH 2
+#define INPUT_LENGTH_COMMAND COMMAND_LENGTH + 2
+#define INT_INPUT_LENGTH 2
+#define INPUT_LENGTH_INT INT_INPUT_LENGTH + 2
+
 
 void checkCommand(char * buffer, int listIndex);
+bool checkCommandWithoutIndex(char * buffer);
 void getInput(char * buffer, int count);
 char * getInputWithValue(int bufferLength);
 void printInterface();
@@ -13,28 +20,46 @@ void printInterface();
 int main() {
     initialize();
     printInterface();
-    int finish = 0;
-    char command[2];
+    bool finish = false;
+    char command[INPUT_LENGTH_COMMAND];
+    char intInput[INPUT_LENGTH_INT];
     int listIndex;
     while(!finish){
         printf("----\nEnter a command\n-----\n");
-        getInput(command, 2);
-        printf("----\nCommand = %s, select a list index (Enter some value between 0 to %d)\n-----\n", command, LIST_MAX_NUM_HEADS);
-        listIndex = (int)strtol(getInputWithValue(2), (char**)NULL, 10);
-        printf("----\nEntered index = %d\n----\n", listIndex);
-        checkCommand(command, listIndex);
+        getInput(command, INPUT_LENGTH_COMMAND);
+        if(strcmp(command, "fp") == 0){
+            printf("\n----\nCommand = %s\n----\n", command);
+            cleanUp();
+            finish = true;
+        }
+        else if(!checkCommandWithoutIndex(command)){
+            printf("----\nCommand = %s, select a list index (Enter some value between 0 to %d)\n-----\n", command, LIST_MAX_NUM_HEADS);
+            getInput(intInput, INPUT_LENGTH_INT);
+            listIndex = (int)strtol(intInput, (char**)NULL, 10);
+            printf("----\nEntered index = %d\n----\n", listIndex);
+            checkCommand(command, listIndex);
+        }
     }
 }
 
-void checkCommand(char * buffer, int listIndex){
-
+bool checkCommandWithoutIndex(char * buffer){
     if(strcmp(buffer, "cl") == 0) {
         int index = addNewList();
         printf("New list index = %d\n", index);
         printAllLists();
-        return;
+        return true;
     }
+    else if(strcmp(buffer, "pa") == 0) {
+        printf("Print all lists\n");
+        printAllLists();
+        return true;
+    }
+    else {
+        return false;
+    }
+}
 
+void checkCommand(char * buffer, int listIndex){
     if(listIndex > LIST_MAX_NUM_HEADS || listIndex < 0){
         printf("Index out of bounds\n");
         return;
@@ -91,8 +116,7 @@ void checkCommand(char * buffer, int listIndex){
         int listForConcat = (int)strtol(getInputWithValue(2), (char**)NULL, 10);
         printf("List for indexing = %d\n", listForConcat);
         if(listForConcat < LIST_MAX_NUM_HEADS && listForConcat > -1 && getListFromIndex(listForConcat) != NULL) {
-            concatLists(charList, getListFromIndex(listForConcat));
-            charLists[listForConcat] = NULL;
+            concatLists(charList, listForConcat);
         }
         else {
             printf("Unable to concat with given list\n");
@@ -101,8 +125,7 @@ void checkCommand(char * buffer, int listIndex){
     }
     else if(strcmp(buffer, "fl") == 0) {
         printf("Free List\n");
-        freeList(charList);
-        charLists[listIndex] = NULL;
+        freeList(charList, listIndex);
         printAllLists();
     }
     else if(strcmp(buffer, "sl") == 0) {
@@ -113,19 +136,18 @@ void checkCommand(char * buffer, int listIndex){
         printf("Word found = %s\n", foundWord);
         printList(charList);
     }
-    else if(strcmp(buffer, "pa") == 0) {
-        printf("Print all lists\n");
-        printAllLists();
-    }
     else if(strcmp(buffer,"pl")  == 0){
         printf("Print list\n");
         printList(charList);
+    }
+    else {
+        printf("Command does not exist!\n");
     }
 }
 
 void getInput(char * buffer, int count) {
     printf("Enter some input:\n");
-    fgets(buffer, count + 2, stdin);
+    fgets(buffer, count, stdin);
     buffer[strcspn(buffer, "\n")] = 0;
 }
 
@@ -137,6 +159,6 @@ char * getInputWithValue(int bufferLength){
 
 void printInterface(){
     printf(
-        "\n||---Testing List class commands---||\n - as: Add new string \n - is: Insert string \n - rs: Remove string at the current pointer \n - ni: Iterate to next item \n - pi: Iterate to previous item \n - gs: Get current string \n - ss: Get head string \n - es: Get end string \n - pl: Print list \n - cl: Create List \n - c2: Concatenate Lists \n - fl: Free List: \n - sl: Search List\n - pa: Print all Lists \n ||---Testing List class commands---||\n\n"
+        "\n||---Testing List class commands---||\n - as: Add new string \n - is: Insert string \n - rs: Remove string at the current pointer \n - ni: Iterate to next item \n - pi: Iterate to previous item \n - gs: Get current string \n - ss: Get head string \n - es: Get end string \n - pl: Print list \n - cl: Create List \n - c2: Concatenate Lists \n - fl: Free List: \n - sl: Search List\n - pa: Print all Lists \n - fp: Finish program \n||---Testing List class commands---||\n\n"
     );
 }
