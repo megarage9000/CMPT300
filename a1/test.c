@@ -21,6 +21,7 @@ int main() {
         getInput(command, 2);
         printf("----\nCommand = %s, select a list index (Enter some value between 0 to %d)\n-----\n", command, LIST_MAX_NUM_HEADS);
         listIndex = (int)strtol(getInputWithValue(2), (char**)NULL, 10);
+        printf("----\nEntered index = %d\n----\n", listIndex);
         checkCommand(command, listIndex);
     }
 }
@@ -84,6 +85,37 @@ void checkCommand(char * buffer, int listIndex){
         printf("End\n");
         printf("Tail item = %s\n", getTailItem(charList));
         printList(charList);
+    }
+    else if(strcmp(buffer, "c2") == 0){
+        printf("Concat. Enter a list by index to concat:\n");
+        int listForConcat = (int)strtol(getInputWithValue(2), (char**)NULL, 10);
+        printf("List for indexing = %d\n", listForConcat);
+        if(listForConcat < LIST_MAX_NUM_HEADS && listForConcat > -1 && getListFromIndex(listForConcat) != NULL) {
+            concatLists(charList, getListFromIndex(listForConcat));
+            charLists[listForConcat] = NULL;
+        }
+        else {
+            printf("Unable to concat with given list\n");
+        }
+        printAllLists();
+    }
+    else if(strcmp(buffer, "fl") == 0) {
+        printf("Free List\n");
+        freeList(charList);
+        charLists[listIndex] = NULL;
+        printAllLists();
+    }
+    else if(strcmp(buffer, "sl") == 0) {
+        printf("Search. Enter a word to look for:\n");
+        char wordToSearch[100];
+        getInput(wordToSearch, 100);
+        char * foundWord = findItem(charList, wordToSearch);
+        printf("Word found = %s\n", foundWord);
+        printList(charList);
+    }
+    else if(strcmp(buffer, "pa") == 0) {
+        printf("Print all lists\n");
+        printAllLists();
     }
     else if(strcmp(buffer,"pl")  == 0){
         printf("Print list\n");

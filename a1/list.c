@@ -189,7 +189,7 @@ void* List_last(List* pList){
 void* List_next(List* pList){
     if(!isListOOB(pList)){
         pList->current = pList->current->next;
-        if(pList->tail->next == pList->current && pList->tail->next == NULL){
+        if(pList->current == NULL){
             pList->status = LIST_OOB_END;
             return NULL;
         }
@@ -201,7 +201,7 @@ void* List_next(List* pList){
 void* List_prev(List* pList){
     if(!isListOOB(pList)){
         pList->current = pList->current->prev;
-        if(pList->current == pList->head->prev && pList->head->prev == NULL){
+        if(pList->current == NULL){
             pList->status = LIST_OOB_START;
             return NULL;
         }
@@ -325,6 +325,7 @@ void List_concat(List* pList1, List* pList2){
         else {
             Link_2_nodes(pList1->tail, pList2->head);
             pList1->count += pList2->count;
+            pList1->tail = pList2->tail;
             if(pList1->status == LIST_OOB_END){
                 pList1->current = pList2->head;
             }
@@ -356,7 +357,6 @@ void* List_trim(List* pList){
 typedef bool (*COMPARATOR_FN)(void* pItem, void* pComparisonArg);
 void* List_search(List* pList, COMPARATOR_FN pComparator, void* pComparisonArg){
     if(!isListEmpty(pList)){
-        List_first(pList);
         void * item = NULL;
         while(pList->current != NULL){
             item = List_curr(pList);

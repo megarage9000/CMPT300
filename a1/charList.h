@@ -40,7 +40,7 @@ void concatLists(List * charList1, List * charList2);
 
 void freeItem(void * item);
 
-void freeList(List * charList, int index);
+void freeList(List * charList);
 
 bool checkMatchingChars(void * item1, void * item2);
 

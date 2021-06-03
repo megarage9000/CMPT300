@@ -71,7 +71,7 @@ void freeItem(void * item){
     free((char *)item);
 }
 
-void freeList(List * charList, int index){
+void freeList(List * charList){
     List_free(charList, freeItem);
 }
 
@@ -112,6 +112,7 @@ void printAllLists() {
     for(int i = 0; i < LIST_MAX_NUM_HEADS; i++){
         List * list = charLists[i];
         if(list != NULL){
+            printf("List index %d: ", i);
             printList(list);
         }
     }
