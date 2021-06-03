@@ -22,7 +22,13 @@ void addCharItem(List * charList, char * item);
 
 void insertCharItem(List * charList, char * item);
 
+void appendCharItem(List * charList, char * item);
+
+void prependCharItem(List * charList, char * item);
+
 char * removeCharItem(List * charList);
+
+char * trimList(List * charList);
 
 char * nextItem(List * charList);
 

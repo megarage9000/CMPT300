@@ -64,7 +64,7 @@ bool returnFreeList(List *pList){
         pList->status = LIST_NOT_OOB;
 
         if(freeListIndex < LIST_MAX_NUM_HEADS - 1){
-            freeLists[freeListIndex++] = pList;
+            freeLists[++freeListIndex] = pList;
             return true;
         }
         else {

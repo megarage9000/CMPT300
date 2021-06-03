@@ -27,13 +27,14 @@ int main() {
     while(!finish){
         printf("----\nEnter a command\n-----\n");
         getInput(command, INPUT_LENGTH_COMMAND);
+        printf("\n----\nCommand = %s\n----\n", command);
         if(strcmp(command, "fp") == 0){
-            printf("\n----\nCommand = %s\n----\n", command);
+            printf("Cleaning up program and lists\n");
             cleanUp();
             finish = true;
         }
         else if(!checkCommandWithoutIndex(command)){
-            printf("----\nCommand = %s, select a list index (Enter some value between 0 to %d)\n-----\n", command, LIST_MAX_NUM_HEADS);
+            printf("----\nSelect a list index (Enter some value between 0 to %d)\n-----\n", LIST_MAX_NUM_HEADS);
             getInput(intInput, INPUT_LENGTH_INT);
             listIndex = (int)strtol(intInput, (char**)NULL, 10);
             printf("----\nEntered index = %d\n----\n", listIndex);
@@ -52,6 +53,10 @@ bool checkCommandWithoutIndex(char * buffer){
     else if(strcmp(buffer, "pa") == 0) {
         printf("Print all lists\n");
         printAllLists();
+        return true;
+    }
+    else if(strcmp(buffer, "hp") == 0) {
+        printInterface();
         return true;
     }
     else {
@@ -81,9 +86,24 @@ void checkCommand(char * buffer, int listIndex){
         insertCharItem(charList, getInputWithValue(20));
         printList(charList);
     }
+    else if(strcmp(buffer,"ap")  == 0){
+        printf("Append\n");
+        appendCharItem(charList, getInputWithValue(20));
+        printList(charList);
+    }
+    else if(strcmp(buffer,"pp")  == 0){
+        printf("Prepend\n");
+        prependCharItem(charList, getInputWithValue(20));
+        printList(charList);
+    }
     else if(strcmp(buffer,"rs")  == 0){
         printf("Remove\n");
         printf("Removed item = %s", removeCharItem(charList));
+        printList(charList);
+    }
+    else if(strcmp(buffer,"tl")  == 0){
+        printf("Trim\n");
+        printf("Removed item = %s", trimList(charList));
         printList(charList);
     }
     else if(strcmp(buffer,"ni")  == 0){
@@ -159,6 +179,6 @@ char * getInputWithValue(int bufferLength){
 
 void printInterface(){
     printf(
-        "\n||---Testing List class commands---||\n - as: Add new string \n - is: Insert string \n - rs: Remove string at the current pointer \n - ni: Iterate to next item \n - pi: Iterate to previous item \n - gs: Get current string \n - ss: Get head string \n - es: Get end string \n - pl: Print list \n - cl: Create List \n - c2: Concatenate Lists \n - fl: Free List: \n - sl: Search List\n - pa: Print all Lists \n - fp: Finish program \n||---Testing List class commands---||\n\n"
+        "\n||---Testing List class commands---||\n - as: Add new string \n - is: Insert string \n - pp: Prepend string \n - ap: Append string \n - rs: Remove string at the current pointer \n - tl: Trim list \n - ni: Iterate to next item \n - pi: Iterate to previous item \n - gs: Get current string \n - ss: Get head string \n - es: Get end string \n - cl: Create List \n - c2: Concatenate Lists \n - fl: Free List: \n - sl: Search List\n - pl: Print list \n - pa: Print all Lists \n - fp: Finish program \n ||---Testing List class commands (Enter \"hp\" to show this again!)---||\n\n"
     );
 }

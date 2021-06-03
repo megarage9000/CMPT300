@@ -7,7 +7,11 @@ void initialize() {
 }
 
 List * createCharList(){
-    return List_create();
+    List * listToReturn = List_create();
+    if(listToReturn == NULL){
+        printf("#####\nERROR: Unable to create new list. No more available list heads\n#####\n");
+    }
+    return listToReturn;
 }
 
 int addNewList(){
@@ -28,15 +32,40 @@ List * getListFromIndex(int index){
 }
 
 void addCharItem(List * charList, char * item){
-    List_add(charList, (void *)item);
+    if(List_add(charList, (void *)item) == -1){
+        free(item);
+        printf("#####\nERROR:Unable to add new nodes, no more free nodes available.\n#####\n");
+    }
 }
 
 void insertCharItem(List * charList, char * item){
-    List_insert(charList, (void *)item);
+    if(List_insert(charList, (void *)item) == -1){
+        free(item);
+        printf("#####\nERROR:Unable to add new nodes, no more free nodes available.\n#####\n");
+    }
+}
+
+void appendCharItem(List * charList, char * item){
+    if(List_append(charList, (void *)item) == -1){
+        free(item);
+        printf("#####\nERROR:Unable to add new nodes, no more free nodes available.\n#####\n");
+    }
+}
+
+void prependCharItem(List * charList, char * item){
+    if(List_prepend(charList, (void *)item) == -1){
+        free(item);
+        printf("#####\nERROR:Unable to add new nodes, no more free nodes available.\n#####\n");
+    }
+    
 }
 
 char * removeCharItem(List * charList){
     return (char *)List_remove(charList);
+}
+
+char * trimList(List * charList){
+    return (char *)List_trim(charList);
 }
 
 char * nextItem(List * charList){
