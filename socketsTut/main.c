@@ -49,6 +49,7 @@ struct in6_addr {
     unsigned char   s6_addr[16];    // IPv6 address
 };
 
+// Storage to hold structures large enough for IPv6 and IPv4 addresses
 struct sockaddr_storage {
     //sa_family_t     ss_family;
 
@@ -61,5 +62,33 @@ struct sockaddr_storage {
 int main() {
     int socketDescriptor;
 
+    struct sockaddr_in sa;
+    struct sockaddr_in6 sa6;
 
+    // Converts address to a struct
+    // - inet_pton -> internet addr to presentation to network
+    // inet_pton(AF_INET, "10.12.110.57", &(sa.sin_addr)); // IPv4
+    // inet_pton(AF_INET6, "2001:db8:63b3:1::3490", &(sa6.sin6_addr)); // IPv6
+
+    // Converts struct to address
+    /*
+        // IPv4 
+        
+        char ip4[INET_ADDRSTRLEN]; // space to hold the IPv4 string
+        struct sockaddr_in sa; // pretend this is loaded with something
+        
+        inet_ntop(AF_INET, &(sa.sin_addr), ip4, INET_ADDRSTRLEN);
+        
+        printf("The IPv4 address is: %s\n", ip4);
+        
+        
+        // IPv6:
+        
+        char ip6[INET6_ADDRSTRLEN]; // space to hold the IPv6 string
+        struct sockaddr_in6 sa6; // pretend this is loaded with something
+        
+        inet_ntop(AF_INET6, &(sa6.sin6_addr), ip6, INET6_ADDRSTRLEN);
+        
+        printf("The address is: %s\n", ip6);
+    */
 }
