@@ -507,7 +507,8 @@ void TestInFreeListChange() {
         CHECK(List_append(lists[0], &(lists[i])) == 0);
     }
     List_free(lists[0], modFreeFn);
-
+    printf("Free lists = %d\n", freeListIndex);
+    //printf("Free nodes = %d\n", freeNodes->count);
     CHECK(freeCounter >= LIST_MAX_NUM_HEADS);
 }
 

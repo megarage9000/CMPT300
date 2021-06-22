@@ -23,6 +23,7 @@ Node * getFreeNode(void * item) {
         nodeToReturn->prev = NULL;
         nodeToReturn->next = NULL;
         nodeToReturn->item = item;
+        freeNodes->count--;
         return nodeToReturn;
     }
     return NULL;
@@ -45,6 +46,7 @@ void returnFreeNode(Node * node) {
     else{
         freeNodes->tail = node;
     }
+    freeNodes->count++;
 }
 
 List * getFreeList(){
@@ -149,6 +151,7 @@ List* List_create() {
 
         freeNodes->head = &nodes[0];
         freeNodes->tail = &nodes[LIST_MAX_NUM_NODES - 1];
+        freeNodes->count = LIST_MAX_NUM_NODES;
         listInit = LIST_INITIALIZED;
     }
 
@@ -356,14 +359,12 @@ void List_free(List* pList, FREE_FN pItemFreeFn){
         return;
     }
     if(!isListEmpty(pList)){
-        List_first(pList);
-        Node * nodeToFree = pList->current;
-        while(nodeToFree != NULL){
-            Node * node = nodeToFree;
+        pList->current = pList->head;
+        while(pList->current != NULL){
+            Node * node = pList->current;
             void * item = node->item;
-            nodeToFree = nodeToFree->next;
-            pItemFreeFn(item);
             List_remove(pList);
+            pItemFreeFn(item);
         }
     }
     returnFreeList(pList);
