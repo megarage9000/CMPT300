@@ -49,6 +49,7 @@ void returnFreeNode(Node * node) {
 
 List * getFreeList(){
     if(freeListIndex >= 0){
+     
         List * listToReturn = freeLists[freeListIndex--];
         return listToReturn;
     }
@@ -61,7 +62,7 @@ bool returnFreeList(List *pList){
         pList->current = NULL;
         pList->head = NULL;
         pList->tail = NULL;
-        pList->status = LIST_NOT_OOB;
+        pList->status = LIST_OOB_START;
 
         if(freeListIndex < LIST_MAX_NUM_HEADS - 1){
             freeLists[++freeListIndex] = pList;
@@ -81,16 +82,17 @@ void Unlink_node(Node * nodeToRemove, Node * prev, Node * next){
         // the removing node, if they exist
         nodeToRemove->next = NULL;
         nodeToRemove->prev = NULL;
-        if(prev != NULL){
-            prev->next = NULL;
-        }
-        if(next != NULL) {
-            next->prev = NULL;
-        }
         if(next != NULL && prev != NULL){
             prev->next = next;
             next->prev = prev;
         }
+        else if(prev != NULL){
+            prev->next = NULL;
+        }
+        else if(next != NULL) {
+            next->prev = NULL;
+        }
+
     }
 }
 
@@ -291,22 +293,16 @@ void* List_remove(List* pList){
     }
     Node * current = pList->current;
     if(current != NULL) {
+        
+        List_next(pList);
+        if(current == pList->head){
+            pList->head = pList->current;
+        }
+        
         Node * currentPrev = current->prev;
         Node * currentNext = current->next;
         Unlink_node(current, currentPrev, currentNext);
-        
-        if(current == pList->tail){
-            pList->tail = currentPrev;
-            pList->current = currentPrev;
-        }
 
-        else {
-            pList->current = currentNext;
-            if(current == pList->head){
-                pList->head = currentNext;
-            }
-        }
-    
         pList->count--;
         void * item = current->item;
         returnFreeNode(current);
@@ -332,8 +328,8 @@ void List_concat(List* pList1, List* pList2){
                 pList1->current = pList2->head;
             }
         }
-        returnFreeList(pList2);
     }
+    returnFreeList(pList2);    
 }
 
 typedef void (*FREE_FN)(void* pItem);
@@ -351,8 +347,33 @@ void List_free(List* pList, FREE_FN pItemFreeFn){
 }
 
 void* List_trim(List* pList){
+    if(isListEmpty(pList)){
+        return NULL;
+    }
     List_last(pList);
-    return List_remove(pList);
+    Node * current = pList->current;
+    if(current != NULL) {
+        
+        List_prev(pList);
+        
+        if(current == pList->tail){
+            pList->tail = pList->current;
+        }
+
+        if(current == pList->head){
+            pList->head = pList->current;
+        }
+
+        Node * currentPrev = current->prev;
+        Node * currentNext = current->next;
+        Unlink_node(current, currentPrev, currentNext);
+
+        pList->count--;
+        void * item = current->item;
+        returnFreeNode(current);
+        return item;
+    }
+    return NULL;
 }
 
 typedef bool (*COMPARATOR_FN)(void* pItem, void* pComparisonArg);

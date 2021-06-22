@@ -8,17 +8,21 @@
 
 
 
-// int getaddrinfo(const char *node,       // e.g. "www.example.com" or IP 
-//                 const char *service,    // e.g. "http" or port number
-//                 const struct addrinfo *hints,
-//                 struct addrinfo **res); 
-
 int showIps(int argc, char *argv[]);
 
 int main(int argc, char *argv[]) {
-    return showIps(argc, argv);
+    // return showIps(argc, argv);
+
+    int s;
+    struct addrinfo hints, *res;
+
+    getaddrinfo("www.example.com", "http", &hints, &res);
+
+    s = socket(res->ai_family, res->ai_socktype, res->ai_protocol); // returns a socket descriptor that we can use for our program! returns -1 if it doesn't work
+
 }
 
+// Sample program to show how to get ips
 int showIps(int argc, char *argv[]){
     struct addrinfo hints, *res, *p;
     int status;
