@@ -143,3 +143,7 @@ void listen_func(int argc, char *argv[]) {
     addr_size = sizeof their_addr;
     new_fd = accept(sockfd, (struct sockaddr * )&their_addr, &addr_size);
 }
+
+void sendAndRecv(int argc, char *argv[]) {
+    
+}
