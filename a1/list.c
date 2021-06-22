@@ -197,6 +197,15 @@ void* List_next(List* pList){
         }
         return pList->current->item;
     } 
+    else {
+        if(pList->status == LIST_OOB_START) {
+            pList->current = pList->head;
+            return List_curr(pList);
+        }
+        else {
+            return List_prev(pList);
+        }
+    }
     return NULL;
 }
 
@@ -208,6 +217,15 @@ void* List_prev(List* pList){
             return NULL;
         }
         return pList->current->item;
+    } 
+    else {
+        if(pList->status == LIST_OOB_END) {
+            pList->current = pList->tail;
+            return List_curr(pList);
+        }
+        else {
+            return List_next(pList);
+        }
     } 
     return NULL;
 }
@@ -334,11 +352,16 @@ void List_concat(List* pList1, List* pList2){
 
 typedef void (*FREE_FN)(void* pItem);
 void List_free(List* pList, FREE_FN pItemFreeFn){
+    if(pItemFreeFn == NULL) {
+        return;
+    }
     if(!isListEmpty(pList)){
         List_first(pList);
-        while(pList->current != NULL){
-            Node * node = pList->current;
+        Node * nodeToFree = pList->current;
+        while(nodeToFree != NULL){
+            Node * node = nodeToFree;
             void * item = node->item;
+            nodeToFree = nodeToFree->next;
             pItemFreeFn(item);
             List_remove(pList);
         }
@@ -378,7 +401,15 @@ void* List_trim(List* pList){
 
 typedef bool (*COMPARATOR_FN)(void* pItem, void* pComparisonArg);
 void* List_search(List* pList, COMPARATOR_FN pComparator, void* pComparisonArg){
+    if(pComparator == pComparisonArg && pComparator == NULL) {
+        return NULL;
+    }
     if(!isListEmpty(pList)){
+
+        if(pList->current == NULL){
+            List_first(pList);
+        }
+      
         void * item = NULL;
         while(pList->current != NULL){
             item = List_curr(pList);
