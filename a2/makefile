@@ -1,6 +1,6 @@
 # include Werror later
 all: 		
-	gcc -g -Wall -o s-talk list.c main.c
+	gcc -g -Wall -o s-talk -pthread listMonitor.c
 
 clean:
-	rm test
+	rm s-talk
