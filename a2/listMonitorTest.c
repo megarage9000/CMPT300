@@ -21,14 +21,18 @@ void testProduce() {
     }
 }
 int main() {
-    pthread_t messagePrinter, messageConsumer;
+    pthread_t messagePrinter, messageConsumer, messagePrinter1, messageConsumer1;
     messageList = createMessageListPtr();
 
     pthread_create(&messagePrinter, NULL, testProduce, NULL);
     pthread_create(&messageConsumer, NULL, testConsume, NULL);
+    pthread_create(&messagePrinter1, NULL, testProduce, NULL);
+    pthread_create(&messageConsumer1, NULL, testConsume, NULL);
     
     pthread_join(messagePrinter, NULL);
     pthread_join(messageConsumer, NULL);
+    pthread_join(messagePrinter1, NULL);
+    pthread_join(messageConsumer1, NULL);
 
     destroyMessageListPtr(messageList);
     printf("\n ------ \nFinished test! \n ------ \n");

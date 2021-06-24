@@ -13,8 +13,14 @@ typedef struct MessageList_s MessageList;
 struct MessageList_s {
     List * messages;
     int maxMessages;
+
+    // For one process access
     pthread_mutex_t access;
+
+    // To notify blocked producers
     pthread_cond_t availableMessage;
+
+    // To notify blocked consumers
     pthread_cond_t spaceAvailable;
 };
 
