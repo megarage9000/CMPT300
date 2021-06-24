@@ -2,32 +2,33 @@
 
 
 // Testing synchronization on a messageList
-int numTimes = 2000;
+int numTimes = 5000;
 MessageList * messageList;
 
-void testConsume() {
+void * testConsume(void * id) {
     for (int i = 0; i < numTimes; i++) {
         char message[] = "Yo what's poppin";
-        consume(messageList, message);
+        consume(messageList, message, (char *)id);
         printf("Successfully consumed message = %s\n", message);
     }
 }
 
-void testProduce() {
+void * testProduce(void * id) {
     for(int i = 0; i < numTimes; i++) {
         char receivedMessage[50];
-        produce(messageList, receivedMessage);
+        produce(messageList, receivedMessage, (char *)id);
         printf("Successfully produced message = %s\n", receivedMessage);
     }
 }
 int main() {
+    char * ids[4] = {"Message Printer 1", "Message Printer 2", "Message Consumer 1", "Message Consumer 2"};
     pthread_t messagePrinter, messageConsumer, messagePrinter1, messageConsumer1;
     messageList = createMessageListPtr();
 
-    pthread_create(&messagePrinter, NULL, testProduce, NULL);
-    pthread_create(&messageConsumer, NULL, testConsume, NULL);
-    pthread_create(&messagePrinter1, NULL, testProduce, NULL);
-    pthread_create(&messageConsumer1, NULL, testConsume, NULL);
+    pthread_create(&messagePrinter, NULL, testProduce, (void *)ids[0]);
+    pthread_create(&messageConsumer, NULL, testConsume,(void *)ids[2]);
+    pthread_create(&messagePrinter1, NULL, testProduce,(void *)ids[1]);
+    pthread_create(&messageConsumer1, NULL, testConsume,(void *)ids[3]);
     
     pthread_join(messagePrinter, NULL);
     pthread_join(messageConsumer, NULL);

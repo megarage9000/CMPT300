@@ -32,8 +32,8 @@ MessageList * createMessageListPtr();
 
 void destroyMessageListPtr(MessageList * messageList);
 
-void consume(MessageList * messageList, char * message);
+void consume(MessageList * messageList, char * message, char * threadId);
 
-void produce(MessageList * messageList, char * buf);
+void produce(MessageList * messageList, char * buf, char * threadId);
 
 #endif

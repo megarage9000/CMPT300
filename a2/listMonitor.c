@@ -29,15 +29,14 @@ void destroyMessageListPtr(MessageList * messageList){
     free(messageList);
 }
 
-void consume(MessageList * messageList, char * message){
-    //printf("Starting consumption...\n");
+void consume(MessageList * messageList, char * message, char * threadId){
     
     pthread_mutex_lock(&messageList->access);
 
     // Do a wait if there is no space for the new message
     // - Use a while loop to prevent concurrent consumption
     while(messageList->messages->count >= MAX_NUM_MESSAGES) {
-        printf("No space available at the moment...\n");
+        printf("Thread %s: No space available at the moment...\n", threadId);
         pthread_cond_wait(&messageList->spaceAvailable, &messageList->access);
     }
     char * newMessage = (char *)malloc(MAX_MESSAGE_LENGTH);
@@ -46,23 +45,22 @@ void consume(MessageList * messageList, char * message){
     // Consume the new message;
     int result = List_prepend(messageList->messages, newMessage);
     if(result == -1) {
-        printf("ERROR: Available nodes have been exhausted\n");
-        printf("Number of items in messages = %d\n", messageList->messages->count);
+        fprintf(stderr, "Thread %s ERROR: Available nodes have been exhausted\n", threadId);
+        printf("Thread %s: Number of items in messages = %d\n", threadId, messageList->messages->count);
     }
     // Signal process waiting on available messages
     pthread_cond_signal(&messageList->availableMessage);
     pthread_mutex_unlock(&messageList->access);
 }
 
-void produce(MessageList * messageList, char * buf) {
-    //printf("Starting production...\n");
+void produce(MessageList * messageList, char * buf, char * threadId) {
 
     pthread_mutex_lock(&messageList->access);
 
      // Do a wait if there is no available message
      // - Use a while to prevent concurrent productions
     while(messageList->messages->count <= 0) {
-        printf("No available messages to produce at the moment...\n");
+        printf("Thread %s: No available messages to produce at the moment...\n", threadId);
         pthread_cond_wait(&messageList->availableMessage, &messageList->access);
     }
 
@@ -74,7 +72,7 @@ void produce(MessageList * messageList, char * buf) {
         free(message);
     }
     else {
-        printf("ERROR: No message available\n");
+        fprintf(stderr, "Thread %s ERROR: No message available\n", threadId);
     }
     // Signal process waiting for available space to add messages
     pthread_cond_signal(&messageList->spaceAvailable);
