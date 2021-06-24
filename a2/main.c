@@ -15,6 +15,12 @@
 // - My port: Where the remote client will be listening too
 // - Their port: Where we are going to listen to
 
+struct UDPThreadArgs {
+    struct addrinfo serverInfo;
+    char * threadId;
+    int sockfd;
+};
+
 MessageList * userMessages, remoteMessages;
 
 void * getInternetAddress(struct sockaddr * socketAddress) {
@@ -63,7 +69,7 @@ void setupListening(int * sockfd, char * userPort) {
     freeaddrinfo(userServerInfo);
 }
 
-void setupSending(int * sockfd, char * remoteHostName, char * hostPort) {
+void setupSending(int * sockfd, char * remoteHostName, char * hostPort, struct addrinfo * remoteServer) {
     struct addrinfo hints, *remoteServerInfo, *p;
     int result;
 
@@ -95,16 +101,66 @@ void setupSending(int * sockfd, char * remoteHostName, char * hostPort) {
     freeaddrinfo(remoteServerInfo);
 }
 
-int main(int argc, char *argv[]) {
-    int listeningSocketfd, sendingSocketfd;
-    if(argc != 4) {
-        printf("usage: ./s-talk userport remoteHostName remoteport\n");
-        return;
+// Thread methods
+void * readUserInput(void * threadId) {
+    char * threadName = (char *)threadId;
+    char buf[MAX_MESSAGE_LENGTH];
+    while(1) {
+        int result = read(STDIN_FILENO, buf, MAX_MESSAGE_LENGTH);
+        if(result == 0) {
+            fprintf(stderr, "Thread %s ERROR: User input has an error!\n", threadName);
+        }
+        else if(result == 1) {
+            memset(buf, 0, sizeof buf);
+            continue;
+        }
+        else if(result >= MAX_MESSAGE_LENGTH * sizeof(char)){
+            fprintf(stderr, "Threas %s ERROR: User input has undefined behaviour!\n", threadName);
+        }
+        else {
+            char * message = (char *)malloc(result);
+            int sizeInInt = (result / sizeof(char));
+            strncpy(message, buf, sizeInInt);
+            message[sizeInInt - 1] = '\0';
+            consume(userMessages, message, sizeInInt, threadName);
+            free(message);
+        }
+        memset(buf, 0, sizeof buf);
     }
-    printf(" - Using user port %s\n", argv[1]);
-    printf(" - Using remote hostname %s at port %s\n", argv[2], argv[3]);
-    setupSending(&sendingSocketfd, argv[2], argv[3]);
-    close(sendingSocketfd);
-    setupListening(&listeningSocketfd, argv[1]);
-    close(listeningSocketfd);
+}
+
+void * printRemoteMessage(void * threadId) {
+
+}
+
+void * sendUserMessages(void * args) {
+    struct UDPThreadArgs * newArgs = (struct UDPThreadArgs *)args;
+    struct addrinfo p = newArgs->serverInfo;
+    char * threadName = newArgs->threadId;
+    int sockfd = newArgs->sockfd;
+    char message[MAX_MESSAGE_LENGTH];
+    while(1) {
+        produce(userMessages, message, threadName);
+        if(sendto(sockfd, message, strlen(message), 0, p.ai_addr, p.ai_addrlen) == -1){
+            fprintf(stderr, "Thread %s ERROR: Unable to send user message %s\n", threadName, message);
+        }
+    }
+}
+
+void * listenForRemoteMessages(void * threadId) {
+
+}
+
+int main(int argc, char *argv[]) {
+    // int listeningSocketfd, sendingSocketfd;
+    // if(argc != 4) {
+    //     printf("usage: ./s-talk userport remoteHostName remoteport\n");
+    //     return;
+    // }
+    // printf(" - Using user port %s\n", argv[1]);
+    // printf(" - Using remote hostname %s at port %s\n", argv[2], argv[3]);
+    // setupSending(&sendingSocketfd, argv[2], argv[3]);
+    // close(sendingSocketfd);
+    // setupListening(&listeningSocketfd, argv[1]);
+    // close(listeningSocketfd);
 }

@@ -29,7 +29,7 @@ void destroyMessageListPtr(MessageList * messageList){
     free(messageList);
 }
 
-void consume(MessageList * messageList, char * message, char * threadId){
+void consume(MessageList * messageList, char * message, int messageLength, char * threadId){
     
     pthread_mutex_lock(&messageList->access);
 
@@ -39,7 +39,7 @@ void consume(MessageList * messageList, char * message, char * threadId){
         printf("Thread %s: No space available at the moment...\n", threadId);
         pthread_cond_wait(&messageList->spaceAvailable, &messageList->access);
     }
-    char * newMessage = (char *)malloc(MAX_MESSAGE_LENGTH);
+    char * newMessage = (char *)malloc(messageLength);
     strcpy(newMessage, message);
 
     // Consume the new message;

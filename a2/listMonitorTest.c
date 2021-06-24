@@ -8,7 +8,7 @@ MessageList * messageList;
 void * testConsume(void * id) {
     for (int i = 0; i < numTimes; i++) {
         char message[] = "Yo what's poppin";
-        consume(messageList, message, (char *)id);
+        consume(messageList, message, strlen(message), (char *)id);
         printf("Successfully consumed message = %s\n", message);
     }
 }
