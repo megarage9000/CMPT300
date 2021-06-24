@@ -25,7 +25,42 @@ void * getInternetAddress(struct sockaddr * socketAddress) {
 }
 
 void setupListening(int * sockfd, char * userPort) {
+    struct addrinfo hints, *userServerInfo, *p;
+    int result;
 
+    memset(&hints, 0, sizeof hints);
+    hints.ai_family = AF_UNSPEC;
+    hints.ai_socktype = SOCK_DGRAM;
+    hints.ai_flags = AI_PASSIVE;
+
+    if((result = getaddrinfo(NULL, userPort, &hints, &userServerInfo)) != 0) {
+        fprintf(stderr, "getaddrinfo listener: %s\n", gai_strerror(result));
+        freeaddrinfo(userServerInfo);
+        exit(1);
+    }
+
+    for(p = userServerInfo; p != NULL; p = p->ai_next) {
+        if((*sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1) {
+            perror("s-talk listener: socket");
+            continue;
+        }
+
+        if(bind(*sockfd, p->ai_addr, p->ai_addrlen) == -1) {
+            close(*sockfd);
+            perror("s-talk listener: bind");
+            continue;
+        }
+
+        break;
+    }
+
+    if(p == NULL) {
+        fprintf(stderr, "s-talk listener: unable to create and bind socket\n");
+        freeaddrinfo(userServerInfo);
+        exit(1);
+    }
+
+    freeaddrinfo(userServerInfo);
 }
 
 void setupSending(int * sockfd, char * remoteHostName, char * hostPort) {
@@ -37,14 +72,14 @@ void setupSending(int * sockfd, char * remoteHostName, char * hostPort) {
     hints.ai_socktype = SOCK_DGRAM;
 
     if((result = getaddrinfo(remoteHostName, hostPort, &hints, &remoteServerInfo)) != 0) {
-        fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(result));
+        fprintf(stderr, "getaddrinfo sender: %s\n", gai_strerror(result));
         freeaddrinfo(remoteServerInfo);
         exit(1);
     }
 
     for(p = remoteServerInfo; p != NULL; p = p->ai_next) {
         if((*sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1){
-            perror("s-talk: socket\n");
+            perror("s-talk sender: socket\n");
             continue;
         }
 
@@ -52,7 +87,7 @@ void setupSending(int * sockfd, char * remoteHostName, char * hostPort) {
     }
 
     if(p == NULL) {
-        fprintf(stderr, "s-talk: unable to create socket\n");
+        fprintf(stderr, "s-talk sender: unable to create socket\n");
         freeaddrinfo(remoteServerInfo);
         exit(1);
     }
@@ -66,8 +101,10 @@ int main(int argc, char *argv[]) {
         printf("usage: ./s-talk userport remoteHostName remoteport\n");
         return;
     }
-    printf("Using hostname %s at port %s\n", argv[2], argv[3]);
+    printf(" - Using user port %s\n", argv[1]);
+    printf(" - Using remote hostname %s at port %s\n", argv[2], argv[3]);
     setupSending(&sendingSocketfd, argv[2], argv[3]);
     close(sendingSocketfd);
-    //setupListening(listeningSocketfd, argv[1]);
+    setupListening(&listeningSocketfd, argv[1]);
+    close(listeningSocketfd);
 }
