@@ -1,6 +1,5 @@
 #include "listMonitor.h"
 
-
 void freeString(void * item){
     free(item);
 }
@@ -16,15 +15,22 @@ MessageList createMessageList() {
     return messageList;
 }
 
+MessageList * createMessageListPtr(){
+    MessageList * messageListPtr = (MessageList *)malloc(sizeof(struct MessageList_s));
+    *messageListPtr = createMessageList();
+    return messageListPtr;
+}
+
 void destroyMessageListPtr(MessageList * messageList){
     List_free(messageList->messages, freeString);
     pthread_mutex_destroy(&messageList->access);
     pthread_cond_destroy(&messageList->availableMessage);
     pthread_cond_destroy(&messageList->spaceAvailable);
+    free(messageList);
 }
 
 void consume(MessageList * messageList, char * message){
-    printf("Starting consumption...\n");
+    //printf("Starting consumption...\n");
     
     pthread_mutex_lock(&messageList->access);
 
@@ -38,7 +44,7 @@ void consume(MessageList * messageList, char * message){
     char * newMessage = (char *)malloc(MAX_MESSAGE_LENGTH);
     strcpy(newMessage, message);
     List_prepend(messageList->messages, newMessage);
-    printf("Added message = %s\n", newMessage);
+    //printf("Added message = %s\n", newMessage);
 
     // Signal process waiting on available messages
     pthread_cond_signal(&messageList->availableMessage);
@@ -48,7 +54,7 @@ void consume(MessageList * messageList, char * message){
 }
 
 void produce(MessageList * messageList, char * buf) {
-    printf("Starting production...\n");
+    //printf("Starting production...\n");
 
     pthread_mutex_lock(&messageList->access);
 
@@ -62,10 +68,11 @@ void produce(MessageList * messageList, char * buf) {
     char * message = List_trim(messageList->messages);
     strcpy(buf, message);
     free(message);
-    printf("Produced new message = %s\n", buf);
+    //printf("Produced new message = %s\n", buf);
 
     // Signal process waiting for available space to add messages
     pthread_cond_signal(&messageList->spaceAvailable);
 
     pthread_mutex_unlock(&messageList->access);
 }
+

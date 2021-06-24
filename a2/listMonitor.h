@@ -9,8 +9,8 @@
 #define MAX_NUM_MESSAGES 10
 #define MAX_MESSAGE_LENGTH 1000
 
-typedef struct messageList_s MessageList;
-struct messageList_s {
+typedef struct MessageList_s MessageList;
+struct MessageList_s {
     List * messages;
     int maxMessages;
     pthread_mutex_t access;
@@ -21,6 +21,8 @@ struct messageList_s {
 void freeString(void * item);
 
 MessageList createMessageList();
+
+MessageList * createMessageListPtr();
 
 void destroyMessageListPtr(MessageList * messageList);
 
