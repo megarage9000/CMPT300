@@ -25,9 +25,9 @@ void *get_in_addr(struct sockaddr * sa) {
 }
 
 struct UDPThreadArgs {
-    struct addrinfo * serverInfo;
+    char * machineName;
+    char * port;
     char * threadId;
-    int sockfd;
 };
 
 MessageList * userMessages, * remoteMessages;
@@ -141,24 +141,53 @@ void * readUserInput(void * threadId) {
 void * printRemoteMessage(void * threadId) {
     char * threadName = (char *)threadId;
     char buf[MAX_MESSAGE_LENGTH];
+    char nextLine = '\n';
     while(1) {
         produce(remoteMessages, buf, threadName);
         write(STDOUT_FILENO, buf, sizeof buf);
+        write(STDOUT_FILENO, nextLine, sizeof nextLine);
     }
 }
 
 void * sendUserMessages(void * args) {
     struct UDPThreadArgs * newArgs = (struct UDPThreadArgs *)args;
-    struct addrinfo p = *newArgs->serverInfo;
     char * threadName = newArgs->threadId;
-    int sockfd = newArgs->sockfd;
-    char message[MAX_MESSAGE_LENGTH];
-    char s[INET6_ADDRSTRLEN];
+    char * remoteHostName = newArgs->machineName;
+    char * remoteHostPort = newArgs->port;
+    struct addrinfo hints, *remoteServer, *p;
+    int sockfd;
+    int result;
+
+    memset(&hints, 0, sizeof hints);
+    hints.ai_family = AF_UNSPEC;
+    hints.ai_socktype = SOCK_DGRAM;
+
+    if((result = getaddrinfo(remoteHostName, remoteHostPort, &hints, &remoteServer)) != 0) {
+        fprintf(stderr, "getaddrinfo sender: %s\n", gai_strerror(result));
+        freeaddrinfo(remoteServer);
+        exit(1);
+    }
+
+    for(p = remoteServer; p != NULL; p = p->ai_next) {
+        if((sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1){
+            perror("s-talk sender: socket\n");
+            continue;
+        }
+
+        break;
+    }
+
+
+    if(p == NULL) {
+        fprintf(stderr, "s-talk sender: unable to create socket\n");
+        freeaddrinfo(remoteServer);
+        exit(1);
+    }
     
+    char message[MAX_MESSAGE_LENGTH];
     while(1) {
         produce(userMessages, message, threadName);
-        printf("Sending message: %s\n to addres %s\n", message, inet_ntop(p.ai_family, get_in_addr((struct sockaddr *)p), s, sizeof s));
-        if(sendto(sockfd, message, strlen(message), 0, p.ai_addr, p.ai_addrlen) == -1){
+        if(sendto(sockfd, message, strlen(message), 0, p->ai_addr, p->ai_addrlen) == -1){
             fprintf(stderr, "Thread %s ERROR: Unable to send user message %s\n", threadName, message);
         }
     }
@@ -167,7 +196,45 @@ void * sendUserMessages(void * args) {
 void * listenForRemoteMessages(void * args) {
     struct UDPThreadArgs * newArgs = (struct UDPThreadArgs *)args;
     char * threadName = newArgs->threadId;
-    int sockfd = newArgs->sockfd;
+    char * userPort = newArgs->port;
+
+    struct addrinfo hints, *userServerInfo, *p;
+    int sockfd;
+    int result;
+
+    memset(&hints, 0, sizeof hints);
+    hints.ai_family = AF_UNSPEC;
+    hints.ai_socktype = SOCK_DGRAM;
+    hints.ai_flags = AI_PASSIVE;
+
+    if((result = getaddrinfo(NULL, userPort, &hints, &userServerInfo)) != 0) {
+        fprintf(stderr, "getaddrinfo listener: %s\n", gai_strerror(result));
+        freeaddrinfo(userServerInfo);
+        exit(1);
+    }
+
+    for(p = userServerInfo; p != NULL; p = p->ai_next) {
+        if((sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1) {
+            perror("s-talk listener: socket");
+            continue;
+        }
+
+        if(bind(sockfd, p->ai_addr, p->ai_addrlen) == -1) {
+            close(sockfd);
+            perror("s-talk listener: bind");
+            continue;
+        }
+
+        break;
+    }
+
+    if(p == NULL) {
+        fprintf(stderr, "s-talk listener: unable to create and bind socket\n");
+        freeaddrinfo(userServerInfo);
+        exit(1);
+    }
+
+    freeaddrinfo(userServerInfo);
 
     struct sockaddr_storage their_addr;
     socklen_t addr_len;
@@ -176,8 +243,11 @@ void * listenForRemoteMessages(void * args) {
     while(1) {
         addr_len = sizeof their_addr;
 
-        if ((recvfrom(sockfd, buf, MAX_MESSAGE_LENGTH, 0,
+        if ((recvfrom(sockfd, buf, MAX_MESSAGE_LENGTH - 1, 0,
             (struct sockaddr *)&their_addr, &addr_len)) == -1) {
+                printf("%s: Unable to get message, resulted in -1 bytes\n", threadName);
+        }
+        else {
             consume(remoteMessages, buf, MAX_MESSAGE_LENGTH, threadName);
         }
     }
@@ -202,11 +272,12 @@ int main(int argc, char *argv[]) {
 
     struct UDPThreadArgs listenArgs, sendingArgs;
     
+    listenArgs.machineName = "";
+    listenArgs.port = argv[1];
     listenArgs.threadId = threadIds[0];
+    sendingArgs.machineName = argv[2];
+    sendingArgs.port = argv[3];
     sendingArgs.threadId = threadIds[1];
-
-    setupListening(&(listenArgs.sockfd), argv[1]);
-    setupSending(&(sendingArgs.sockfd), argv[2], argv[3], sendingArgs.serverInfo);
 
     pthread_t sendingThread, receivingThread, getUserInput, printMessages;
 
