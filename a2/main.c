@@ -140,12 +140,11 @@ void * readUserInput(void * threadId) {
 
 void * printRemoteMessage(void * threadId) {
     char * threadName = (char *)threadId;
-    char buf[MAX_MESSAGE_LENGTH];
-    char nextLine = '\n';
+    char buf[MAX_MESSAGE_LENGTH + 1];
     while(1) {
         produce(remoteMessages, buf, threadName);
+        buf[MAX_MESSAGE_LENGTH] = '\n';
         write(STDOUT_FILENO, buf, sizeof buf);
-        write(STDOUT_FILENO, nextLine, sizeof nextLine);
     }
 }
 
@@ -173,7 +172,6 @@ void * sendUserMessages(void * args) {
             perror("s-talk sender: socket\n");
             continue;
         }
-
         break;
     }
 
