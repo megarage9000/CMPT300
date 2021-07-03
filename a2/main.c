@@ -54,10 +54,13 @@ bool getShutdownValue() {
     return valueToReturn;
 }
 
-void checkIfStopped(char * buf) {
+bool checkIfStopped(char * buf) {
     if(strcmp(buf, "!") == 0) {
         setShutdown(true);
-        fclose(stdin);
+        return true;
+    }
+    else {
+        return false;
     }
 }
 
@@ -91,15 +94,14 @@ void * readUserInput(void * threadId) {
                 strncpy(message, buf, sizeInInt);
                 message[sizeInInt - 1] = '\0';
                 consume(userMessages, message, sizeInInt, threadName);
-                if(strcmp(message, "!") == 0) {
-                    setShutdown(true);
-                    break;
+                if(checkIfStopped(message)) {
+                    consume(remoteMessages, endSymbol, strlen(endSymbol), threadName);
                 }
             }
             memset(buf, 0, sizeof buf);
         }
     }
-    
+
     printf("Thread %s has reached end of function\n", threadName);
     pthread_exit(NULL);
 }
@@ -151,12 +153,20 @@ void * sendUserMessages(void * args) {
     }
     
     char message[MAX_MESSAGE_LENGTH];
+
+    struct pollfd pfds;
+    pfds.fd = sockfd;
+    pfds.events = POLLOUT;    
+
     while(!getShutdownValue()) {
         produce(userMessages, message, MAX_MESSAGE_LENGTH, threadName);
         if(sendto(sockfd, message, strlen(message), 0, p->ai_addr, p->ai_addrlen) == -1){
             fprintf(stderr, "Thread %s ERROR: Unable to send user message %s\n", threadName, message);
+        } else {
+            if(checkIfStopped(message)){
+                consume(remoteMessages, endSymbol, strlen(endSymbol), threadName);
+            }
         }
-        checkIfStopped(message);
     }
 
     freeaddrinfo(remoteServer);
@@ -219,9 +229,10 @@ void * listenForRemoteMessages(void * args) {
                 printf("%s: Unable to get message, resulted in -1 bytes\n", threadName);
         }
         else {
-            printf("Thread %s got message %s\n", threadName, buf);
             consume(remoteMessages, buf, MAX_MESSAGE_LENGTH, threadName);
-            checkIfStopped(buf);
+            if(checkIfStopped(buf)){
+                consume(userMessages, endSymbol, strlen(endSymbol), threadName);
+            }
             memset(buf, 0, sizeof buf);
         }
     }
