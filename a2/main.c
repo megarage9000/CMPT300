@@ -95,8 +95,9 @@ void * readUserInput(void * threadId) {
                 message[sizeInInt - 1] = '\0';
                 consume(userMessages, message, sizeInInt, threadName);
                 if(checkIfStopped(message)) {
-                    consume(remoteMessages, endSymbol, strlen(endSymbol), threadName);
+                    consume(remoteMessages, endSymbol, 1, threadName);
                 }
+                free(message);
             }
             memset(buf, 0, sizeof buf);
         }
@@ -152,11 +153,7 @@ void * sendUserMessages(void * args) {
         exit(1);
     }
     
-    char message[MAX_MESSAGE_LENGTH];
-
-    struct pollfd pfds;
-    pfds.fd = sockfd;
-    pfds.events = POLLOUT;    
+    char message[MAX_MESSAGE_LENGTH]; 
 
     while(!getShutdownValue()) {
         produce(userMessages, message, MAX_MESSAGE_LENGTH, threadName);
@@ -164,7 +161,7 @@ void * sendUserMessages(void * args) {
             fprintf(stderr, "Thread %s ERROR: Unable to send user message %s\n", threadName, message);
         } else {
             if(checkIfStopped(message)){
-                consume(remoteMessages, endSymbol, strlen(endSymbol), threadName);
+                consume(remoteMessages, endSymbol, 1, threadName);
             }
         }
     }
@@ -231,7 +228,7 @@ void * listenForRemoteMessages(void * args) {
         else {
             consume(remoteMessages, buf, MAX_MESSAGE_LENGTH, threadName);
             if(checkIfStopped(buf)){
-                consume(userMessages, endSymbol, strlen(endSymbol), threadName);
+                consume(userMessages, endSymbol, 1, threadName);
             }
             memset(buf, 0, sizeof buf);
         }
