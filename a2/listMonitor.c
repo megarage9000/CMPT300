@@ -41,7 +41,6 @@ void consume(MessageList * messageList, char * message, int messageLength, char 
     }
     char * newMessage = (char *)malloc(messageLength);
     strncpy(newMessage, message, messageLength);
-    newMessage[messageLength] = '\0';
 
     // Consume the new message;
     int result = List_prepend(messageList->messages, newMessage);

@@ -57,7 +57,7 @@ bool getShutdownValue() {
 void * readUserInput(void * threadId) {
     char * threadName = (char *)threadId;
     char buf[MAX_MESSAGE_LENGTH];
-    while(1) {
+    while(!getShutdownValue()) {
         int result = read(STDIN_FILENO, buf, MAX_MESSAGE_LENGTH);
         if(result == 0) {
             fprintf(stderr, "Thread %s ERROR: User input has an error!\n", threadName);
@@ -78,12 +78,7 @@ void * readUserInput(void * threadId) {
             consume(userMessages, message, sizeInInt, threadName);
             free(message);
         }
-
         memset(buf, 0, sizeof buf);
-        
-        if(getShutdownValue() == true) {
-            break;
-        }
     }
 }
 
@@ -144,7 +139,6 @@ void * sendUserMessages(void * args) {
     }
 
     freeaddrinfo(remoteServer);
-    freeaddrinfo(p);
 }
 
 void * listenForRemoteMessages(void * args) {
