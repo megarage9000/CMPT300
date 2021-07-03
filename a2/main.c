@@ -9,7 +9,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
-#include <sys/select.h>
+#include <sys/poll.h>
 #include "listMonitor.h"
 
 
@@ -63,42 +63,44 @@ void checkIfStopped(char * buf) {
 
 // Thread methods
 void * readUserInput(void * threadId) {
+
     char * threadName = (char *)threadId;
     char buf[MAX_MESSAGE_LENGTH];
-    fd_set fds;
-    struct timeval timeout;
-    timeout.tv_sec = 0;
-    timeout.tv_usec = 1;
-    FD_ZERO(&fds);
-    FD_SET(STDIN_FILENO, &fds);
-    while(select(STDIN_FILENO , &fds, NULL, NULL, &timeout) != 1) {
-        int result = read(STDIN_FILENO, buf, MAX_MESSAGE_LENGTH);
-        if(result == 0) {
-            fprintf(stderr, "Thread %s ERROR: User input has an error!\n", threadName);
-        }
-        else if(result == 1) {
-            memset(buf, 0, sizeof buf);
-            
-        }
-        else if(result >= MAX_MESSAGE_LENGTH * sizeof(char)){
-            fprintf(stderr, "Threas %s ERROR: User input has undefined behaviour!\n", threadName);
-        }
-        else {
-            char * message = (char *)malloc(result);
-            int sizeInInt = (result / sizeof(char));
-            strncpy(message, buf, sizeInInt);
-            message[sizeInInt - 1] = '\0';
-            printf("User input = %s\n", message);
-            consume(userMessages, message, sizeInInt, threadName);
-            if(strcmp(message, "!") == 0) {
-                setShutdown(true);
-                break;
+   
+    
+    struct pollfd pfds;
+    pfds.fd = STDIN_FILENO;
+    pfds.events = POLLIN;
+
+    while(!getShutdownValue()) {
+        if(poll(&pfds, 1 , -1)){
+            int result = read(STDIN_FILENO, buf, MAX_MESSAGE_LENGTH);
+            if(result == 0) {
+                fprintf(stderr, "Thread %s ERROR: User input has an error!\n", threadName);
             }
-            free(message);
+            else if(result == 1) {
+                memset(buf, 0, sizeof buf);
+                
+            }
+            else if(result >= MAX_MESSAGE_LENGTH * sizeof(char)){
+                fprintf(stderr, "Threas test %s: User input has undefined behaviour!\n", threadName);
+            }
+            else {
+                char * message = (char *)malloc(result);
+                int sizeInInt = (result / sizeof(char));
+                strncpy(message, buf, sizeInInt);
+                message[sizeInInt - 1] = '\0';
+                consume(userMessages, message, sizeInInt, threadName);
+                if(strcmp(message, "!") == 0) {
+                    setShutdown(true);
+                    break;
+                }
+            }
+            memset(buf, 0, sizeof buf);
         }
-        memset(buf, 0, sizeof buf);
     }
     
+    printf("Thread %s has reached end of function\n", threadName);
     pthread_exit(NULL);
 }
 
@@ -110,6 +112,7 @@ void * printRemoteMessage(void * threadId) {
         buf[MAX_MESSAGE_LENGTH] = '\n';
         write(STDOUT_FILENO, buf, sizeof buf);
     }
+    printf("Thread %s has reached end of function\n", threadName);
     pthread_exit(NULL);
 }
 
@@ -157,6 +160,7 @@ void * sendUserMessages(void * args) {
     }
 
     freeaddrinfo(remoteServer);
+    printf("Thread %s has reached end of function\n", threadName);
     pthread_exit(NULL);
 }
 
@@ -215,10 +219,13 @@ void * listenForRemoteMessages(void * args) {
                 printf("%s: Unable to get message, resulted in -1 bytes\n", threadName);
         }
         else {
+            printf("Thread %s got message %s\n", threadName, buf);
             consume(remoteMessages, buf, MAX_MESSAGE_LENGTH, threadName);
             checkIfStopped(buf);
+            memset(buf, 0, sizeof buf);
         }
     }
+    printf("Thread %s has reached end of function\n", threadName);
     pthread_exit(NULL);
 }
 
