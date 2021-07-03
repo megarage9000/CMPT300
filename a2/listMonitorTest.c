@@ -2,7 +2,7 @@
 
 
 // Testing synchronization on a messageList
-int numTimes = 5000;
+int numTimes = 50;
 MessageList * messageList;
 
 void * testConsume(void * id) {
@@ -16,7 +16,7 @@ void * testConsume(void * id) {
 void * testProduce(void * id) {
     for(int i = 0; i < numTimes; i++) {
         char receivedMessage[50];
-        produce(messageList, receivedMessage, (char *)id);
+        produce(messageList, receivedMessage, 50, (char *)id);
         printf("Successfully produced message = %s\n", receivedMessage);
     }
 }

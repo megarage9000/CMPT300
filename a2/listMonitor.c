@@ -40,7 +40,8 @@ void consume(MessageList * messageList, char * message, int messageLength, char 
         pthread_cond_wait(&messageList->spaceAvailable, &messageList->access);
     }
     char * newMessage = (char *)malloc(messageLength);
-    strcpy(newMessage, message);
+    strncpy(newMessage, message, messageLength);
+    newMessage[messageLength] = '\0';
 
     // Consume the new message;
     int result = List_prepend(messageList->messages, newMessage);
@@ -53,7 +54,7 @@ void consume(MessageList * messageList, char * message, int messageLength, char 
     pthread_mutex_unlock(&messageList->access);
 }
 
-void produce(MessageList * messageList, char * buf, char * threadId) {
+void produce(MessageList * messageList, char * buf, int sizeOfBuf, char * threadId) {
 
     pthread_mutex_lock(&messageList->access);
 
@@ -68,11 +69,12 @@ void produce(MessageList * messageList, char * buf, char * threadId) {
     char * message = List_trim(messageList->messages);
     //printf("Produced new message = %s\n", buf);
     if(message != NULL) {
-        strcpy(buf, message);
+        strncpy(buf, message, sizeOfBuf);
         free(message);
     }
     else {
         //fprintf(stderr, "Thread %s ERROR: No message available\n", threadId);
+
     }
     // Signal process waiting for available space to add messages
     pthread_cond_signal(&messageList->spaceAvailable);

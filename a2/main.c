@@ -11,18 +11,11 @@
 #include <netdb.h>
 #include "listMonitor.h"
 
-#define ENDSYMBOL '!'
+
 
 // Two ports
 // - My port: Where the remote client will be listening too
 // - Their port: Where we are going to listen to
-
-void *get_in_addr(struct sockaddr * sa) {
-    if(sa->sa_family == AF_INET) {
-        return &(((struct sockaddr_in*)sa)->sin_addr);
-    }
-    return &(((struct sockaddr_in6*)sa)->sin6_addr);
-}
 
 struct UDPThreadArgs {
     char * machineName;
@@ -32,82 +25,32 @@ struct UDPThreadArgs {
 
 MessageList * userMessages, * remoteMessages;
 
-void * getInternetAddress(struct sockaddr * socketAddress) {
-    if(socketAddress->sa_family == AF_INET){
-        return &(((struct sockaddr_in*)socketAddress)->sin_addr);
-    }
-    return &(((struct sockaddr_in6*)socketAddress)->sin6_addr);
+bool shutdownProgram;
+pthread_mutex_t shutdownLock;
+char endSymbol[] = "!";
+
+void initializeShutdownLock(){
+    shutdownProgram = false;
+    pthread_mutex_init(&shutdownLock, NULL);
 }
 
-void setupListening(int * sockfd, char * userPort) {
-    struct addrinfo hints, *userServerInfo, *p;
-    int result;
-
-    memset(&hints, 0, sizeof hints);
-    hints.ai_family = AF_UNSPEC;
-    hints.ai_socktype = SOCK_DGRAM;
-    hints.ai_flags = AI_PASSIVE;
-
-    if((result = getaddrinfo(NULL, userPort, &hints, &userServerInfo)) != 0) {
-        fprintf(stderr, "getaddrinfo listener: %s\n", gai_strerror(result));
-        freeaddrinfo(userServerInfo);
-        exit(1);
-    }
-
-    for(p = userServerInfo; p != NULL; p = p->ai_next) {
-        if((*sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1) {
-            perror("s-talk listener: socket");
-            continue;
-        }
-
-        if(bind(*sockfd, p->ai_addr, p->ai_addrlen) == -1) {
-            close(*sockfd);
-            perror("s-talk listener: bind");
-            continue;
-        }
-
-        break;
-    }
-
-    if(p == NULL) {
-        fprintf(stderr, "s-talk listener: unable to create and bind socket\n");
-        freeaddrinfo(userServerInfo);
-        exit(1);
-    }
-
-    freeaddrinfo(userServerInfo);
+void destroyShutdownLock(){
+    pthread_mutex_destroy(&shutdownLock);
 }
 
-void setupSending(int * sockfd, char * remoteHostName, char * hostPort, struct addrinfo * remoteServer) {
-    struct addrinfo hints, *p;
-    int result;
+void setShutdown(bool value){
+    pthread_mutex_lock(&shutdownLock);
+    printf("Setting bool shutdown to %d (0 = false, 1 = true)\n", value);
+    shutdownProgram = value;
+    pthread_mutex_unlock(&shutdownLock);
+}
 
-    memset(&hints, 0, sizeof hints);
-    hints.ai_family = AF_UNSPEC;
-    hints.ai_socktype = SOCK_DGRAM;
-
-    if((result = getaddrinfo(remoteHostName, hostPort, &hints, &remoteServer)) != 0) {
-        fprintf(stderr, "getaddrinfo sender: %s\n", gai_strerror(result));
-        freeaddrinfo(remoteServer);
-        exit(1);
-    }
-
-    for(p = remoteServer; p != NULL; p = p->ai_next) {
-        if((*sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1){
-            perror("s-talk sender: socket\n");
-            continue;
-        }
-
-        break;
-    }
-
-
-    if(p == NULL) {
-        fprintf(stderr, "s-talk sender: unable to create socket\n");
-        freeaddrinfo(remoteServer);
-        exit(1);
-    }
-    //freeaddrinfo(remoteServerInfo);
+bool getShutdownValue() {
+    bool valueToReturn;
+    pthread_mutex_lock(&shutdownLock);
+    valueToReturn = shutdownProgram;
+    pthread_mutex_unlock(&shutdownLock);
+    return valueToReturn;
 }
 
 // Thread methods
@@ -131,18 +74,24 @@ void * readUserInput(void * threadId) {
             int sizeInInt = (result / sizeof(char));
             strncpy(message, buf, sizeInInt);
             message[sizeInInt - 1] = '\0';
+            printf("User input = %s\n", message);
             consume(userMessages, message, sizeInInt, threadName);
             free(message);
         }
+
         memset(buf, 0, sizeof buf);
+        
+        if(getShutdownValue() == true) {
+            break;
+        }
     }
 }
 
 void * printRemoteMessage(void * threadId) {
     char * threadName = (char *)threadId;
     char buf[MAX_MESSAGE_LENGTH + 1];
-    while(1) {
-        produce(remoteMessages, buf, threadName);
+    while(!getShutdownValue()) {
+        produce(remoteMessages, buf, MAX_MESSAGE_LENGTH, threadName);
         buf[MAX_MESSAGE_LENGTH] = '\n';
         write(STDOUT_FILENO, buf, sizeof buf);
     }
@@ -183,12 +132,19 @@ void * sendUserMessages(void * args) {
     }
     
     char message[MAX_MESSAGE_LENGTH];
-    while(1) {
-        produce(userMessages, message, threadName);
+    while(!getShutdownValue()) {
+        produce(userMessages, message, MAX_MESSAGE_LENGTH, threadName);
         if(sendto(sockfd, message, strlen(message), 0, p->ai_addr, p->ai_addrlen) == -1){
             fprintf(stderr, "Thread %s ERROR: Unable to send user message %s\n", threadName, message);
         }
+        if(strcmp(message, "!") == 0) {
+            setShutdown(true);
+            printf("Sending termination to remote peer, press enter to complete the termination.\n");
+        }
     }
+
+    freeaddrinfo(remoteServer);
+    freeaddrinfo(p);
 }
 
 void * listenForRemoteMessages(void * args) {
@@ -238,7 +194,7 @@ void * listenForRemoteMessages(void * args) {
     socklen_t addr_len;
     char buf[MAX_MESSAGE_LENGTH];
 
-    while(1) {
+    while(!getShutdownValue()) {
         addr_len = sizeof their_addr;
 
         if ((recvfrom(sockfd, buf, MAX_MESSAGE_LENGTH - 1, 0,
@@ -246,6 +202,11 @@ void * listenForRemoteMessages(void * args) {
                 printf("%s: Unable to get message, resulted in -1 bytes\n", threadName);
         }
         else {
+            printf("Got %s from remote\n", buf);
+            if(strcmp(buf, "!") == 0){
+                setShutdown(true);
+                printf("Received terminating signal from remote peer, press enter to complete termination.\n");
+            }
             consume(remoteMessages, buf, MAX_MESSAGE_LENGTH, threadName);
         }
     }
@@ -265,6 +226,7 @@ int main(int argc, char *argv[]) {
         "Displaying Messages Thread"
     };
 
+    initializeShutdownLock();
     userMessages = createMessageListPtr();
     remoteMessages = createMessageListPtr();
 
@@ -288,5 +250,10 @@ int main(int argc, char *argv[]) {
     pthread_join(receivingThread, NULL);
     pthread_join(getUserInput, NULL);
     pthread_join(printMessages, NULL);
+
+    destroyShutdownLock();
+
+    destroyMessageListPtr(userMessages);
+    destroyMessageListPtr(remoteMessages);
     return 0;
 }
