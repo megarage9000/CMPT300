@@ -12,12 +12,9 @@
 #include <sys/poll.h>
 #include "listMonitor.h"
 
+// UDP socket code inspired by beej's guide
 
-
-// Two ports
-// - My port: Where the remote client will be listening too
-// - Their port: Where we are going to listen to
-
+// Struct to pass arguments to thread UDP methods
 struct UDPThreadArgs {
     char * machineName;
     char * port;
@@ -26,6 +23,8 @@ struct UDPThreadArgs {
 
 MessageList * userMessages, * remoteMessages;
 
+
+// Atomic boolean to determine whether program needs to shutdown or not
 bool shutdownProgram;
 pthread_mutex_t shutdownLock;
 char endSymbol[] = "!";
@@ -39,13 +38,7 @@ void destroyShutdownLock(){
     pthread_mutex_destroy(&shutdownLock);
 }
 
-void setShutdown(bool value){
-    pthread_mutex_lock(&shutdownLock);
-    printf("Setting bool shutdown to %d (0 = false, 1 = true)\n", value);
-    shutdownProgram = value;
-    pthread_mutex_unlock(&shutdownLock);
-}
-
+// Getters / Setters for atomic shutdown variable
 bool getShutdownValue() {
     bool valueToReturn;
     pthread_mutex_lock(&shutdownLock);
@@ -54,8 +47,15 @@ bool getShutdownValue() {
     return valueToReturn;
 }
 
+void setShutdown(bool value){
+    pthread_mutex_lock(&shutdownLock);
+    shutdownProgram = value;
+    pthread_mutex_unlock(&shutdownLock);
+}
+
+// Checks if a ! symbol is detected in the program
 bool checkIfStopped(char * buf) {
-    if(strcmp(buf, "!") == 0) {
+    if(strcmp(buf, endSymbol) == 0) {
         setShutdown(true);
         return true;
     }
@@ -64,13 +64,16 @@ bool checkIfStopped(char * buf) {
     }
 }
 
-// Thread methods
+// ---- Thread methods ---- 
+
+// -- Reading user messages --
 void * readUserInput(void * threadId) {
 
     char * threadName = (char *)threadId;
     char buf[MAX_MESSAGE_LENGTH];
    
-    
+    // Use poll for non-blocking I/O
+    // From: https://www.linuxtoday.com/blog/multiplexed-i0-with-poll.html
     struct pollfd pfds;
     pfds.fd = STDIN_FILENO;
     pfds.events = POLLIN;
@@ -78,16 +81,19 @@ void * readUserInput(void * threadId) {
     while(!getShutdownValue()) {
         if(poll(&pfds, 1 , -1)){
             int result = read(STDIN_FILENO, buf, MAX_MESSAGE_LENGTH);
+            // Error 
             if(result == 0) {
                 fprintf(stderr, "Thread %s ERROR: User input has an error!\n", threadName);
             }
+            // For instances when an enter is pressed
             else if(result == 1) {
                 memset(buf, 0, sizeof buf);
-                
             }
+            // Undefined behaviour
             else if(result >= MAX_MESSAGE_LENGTH * sizeof(char)){
-                fprintf(stderr, "Threas test %s: User input has undefined behaviour!\n", threadName);
+                fprintf(stderr, "Thread %s: User input has undefined behaviour!\n", threadName);
             }
+            // Truncate the message to a correct size to pass in list
             else {
                 char * message = (char *)malloc(result);
                 int sizeInInt = (result / sizeof(char));
@@ -99,31 +105,47 @@ void * readUserInput(void * threadId) {
                 }
                 free(message);
             }
+            // Reset buffer for every input attempt
             memset(buf, 0, sizeof buf);
         }
     }
 
-    printf("Thread %s has reached end of function\n", threadName);
+    // Complete the thread method
     pthread_exit(NULL);
 }
 
+// -- Displaying received remote messages --
 void * printRemoteMessage(void * threadId) {
     char * threadName = (char *)threadId;
     char buf[MAX_MESSAGE_LENGTH + 1];
+
+    // Fetch from remote messages and print via write()
     while(!getShutdownValue()) {
         produce(remoteMessages, buf, MAX_MESSAGE_LENGTH, threadName);
         buf[MAX_MESSAGE_LENGTH] = '\n';
-        write(STDOUT_FILENO, buf, sizeof buf);
+        if(strcmp(buf, endSymbol) == 0) {
+            continue;
+        }
+        else {
+            write(STDOUT_FILENO, buf, sizeof buf);
+        }
+        // resetting buffer of bytes
+        memset(buf, 0, sizeof(buf));
     }
-    printf("Thread %s has reached end of function\n", threadName);
+
+    // Complete the thread method
     pthread_exit(NULL);
 }
 
+// -- Sending input from user -> remote --
 void * sendUserMessages(void * args) {
+    // Deconstructing the arguments for UDP operations
     struct UDPThreadArgs * newArgs = (struct UDPThreadArgs *)args;
     char * threadName = newArgs->threadId;
     char * remoteHostName = newArgs->machineName;
     char * remoteHostPort = newArgs->port;
+
+    // Declaring and initializing socket vars
     struct addrinfo hints, *remoteServer, *p;
     int sockfd;
     int result;
@@ -132,6 +154,8 @@ void * sendUserMessages(void * args) {
     hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_DGRAM;
 
+
+    // Creating a socket given the hostname for sending
     if((result = getaddrinfo(remoteHostName, remoteHostPort, &hints, &remoteServer)) != 0) {
         fprintf(stderr, "getaddrinfo sender: %s\n", gai_strerror(result));
         freeaddrinfo(remoteServer);
@@ -153,8 +177,8 @@ void * sendUserMessages(void * args) {
         exit(1);
     }
     
+    // Continue to fetch user messages and send them to remote peer
     char message[MAX_MESSAGE_LENGTH]; 
-
     while(!getShutdownValue()) {
         produce(userMessages, message, MAX_MESSAGE_LENGTH, threadName);
         if(sendto(sockfd, message, strlen(message), 0, p->ai_addr, p->ai_addrlen) == -1){
@@ -166,16 +190,21 @@ void * sendUserMessages(void * args) {
         }
     }
 
+    // Freeing allocated data
     freeaddrinfo(remoteServer);
-    printf("Thread %s has reached end of function\n", threadName);
+    // Complete the thread method
     pthread_exit(NULL);
 }
 
+
+// -- Awaiting remote messages from peer --
 void * listenForRemoteMessages(void * args) {
+    // Deconstructing UDP arguments
     struct UDPThreadArgs * newArgs = (struct UDPThreadArgs *)args;
     char * threadName = newArgs->threadId;
     char * userPort = newArgs->port;
 
+    // Declaring and initialzing socket vars
     struct addrinfo hints, *userServerInfo, *p;
     int sockfd;
     int result;
@@ -185,6 +214,7 @@ void * listenForRemoteMessages(void * args) {
     hints.ai_socktype = SOCK_DGRAM;
     hints.ai_flags = AI_PASSIVE;
 
+    // Finding the appropriate host socket to listen for remote messages
     if((result = getaddrinfo(NULL, userPort, &hints, &userServerInfo)) != 0) {
         fprintf(stderr, "getaddrinfo listener: %s\n", gai_strerror(result));
         freeaddrinfo(userServerInfo);
@@ -212,12 +242,14 @@ void * listenForRemoteMessages(void * args) {
         exit(1);
     }
 
+    // Freeing unwanted server info
     freeaddrinfo(userServerInfo);
 
     struct sockaddr_storage their_addr;
     socklen_t addr_len;
     char buf[MAX_MESSAGE_LENGTH];
 
+    // Track user messages and consume them to remote messages when they appear
     while(!getShutdownValue()) {
         addr_len = sizeof their_addr;
 
@@ -228,12 +260,14 @@ void * listenForRemoteMessages(void * args) {
         else {
             consume(remoteMessages, buf, MAX_MESSAGE_LENGTH, threadName);
             if(checkIfStopped(buf)){
+                printf("Remote peer has shutdown, hit [Enter] to terminate program\n");
                 consume(userMessages, endSymbol, 1, threadName);
             }
             memset(buf, 0, sizeof buf);
         }
     }
-    printf("Thread %s has reached end of function\n", threadName);
+
+    // Complete thread method
     pthread_exit(NULL);
 }
 
@@ -260,6 +294,7 @@ int main(int argc, char *argv[]) {
     listenArgs.machineName = "";
     listenArgs.port = argv[1];
     listenArgs.threadId = threadIds[0];
+
     sendingArgs.machineName = argv[2];
     sendingArgs.port = argv[3];
     sendingArgs.threadId = threadIds[1];
