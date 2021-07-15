@@ -358,13 +358,19 @@ void List_free(List* pList, FREE_FN pItemFreeFn){
     if(pItemFreeFn == NULL) {
         return;
     }
-    if(!isListEmpty(pList)){
-        pList->current = pList->head;
-        while(pList->current != NULL){
-            Node * node = pList->current;
-            void * item = node->item;
-            List_remove(pList);
+    if(pList){
+        Node * current = pList->head;
+        Node * next;
+        int count = 0;
+        int maxCount = pList->count;
+        while(current != NULL && count < maxCount){
+            void * item = current->item;
+            next = current->next;
             pItemFreeFn(item);
+            pList->current = current;
+            List_remove(pList);
+            current = next;
+            count++;
         }
     }
     returnFreeList(pList);

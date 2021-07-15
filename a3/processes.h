@@ -6,8 +6,8 @@
 
 // --- PCB --- //
 
-enum priority {low, medium, high};
-enum state {blocked, ready, running};
+enum priority {low, medium, high, none};
+enum state {blocked, ready, running, stateless};
 
 typedef struct Process_Message_s Process_Message;
 struct Process_Message_s {
@@ -29,6 +29,13 @@ constexpr Process_Message emptyMessage = {
     -1,
     ""
 };  
+
+constexpr Process_PCB emptyProcess = {
+    -1,
+    none,
+    stateless,
+    emptyMessage
+};
 
 Process_PCB createProcess(int pid, priority priority, state state);
 Process_Message createMessage(int sendingPid, int receivingPid, char * message);
