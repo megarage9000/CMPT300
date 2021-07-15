@@ -3,11 +3,18 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <stdbool.h>
+#include "list.h"
 
-// --- PCB --- //
+#define MAX_MESSAGE_LENGTH 40
 
-enum priority {low, medium, high, none};
-enum state {blocked, ready, running, stateless};
+// --- Process PCB and Messages --- //
+
+typedef enum priority_e priority;
+enum priority_e {low, medium, high, none};
+typedef enum state_e state;
+enum state_e {blocked, ready, running, stateless};
 
 typedef struct Process_Message_s Process_Message;
 struct Process_Message_s {
@@ -24,20 +31,49 @@ struct Process_PCB_s {
     Process_Message message;  //   
 };
 
-constexpr Process_Message emptyMessage = {
-    -1,
-    -1,
-    ""
+static Process_Message emptyMessage = {
+    .sendingPid = -1,
+    .receivingPid = -1,
+    .receivedMessage = ""
 };  
 
-constexpr Process_PCB emptyProcess = {
-    -1,
-    none,
-    stateless,
-    emptyMessage
+static Process_PCB emptyProcess = {
+    .pid = -1,
+    .processPriority = none,
+    .processState = stateless,
+    .message = (Process_Message){
+        -1,
+        -1,
+        ""
+    }
 };
 
-Process_PCB createProcess(int pid, priority priority, state state);
-Process_Message createMessage(int sendingPid, int receivingPid, char * message);
+Process_PCB initProcess(int pid, priority priority, state state);
+Process_Message initProcessMessage(int sendingPid, int receivingPid, char * message, int messageSize);
+void printProcess(Process_PCB process);
+void printMessage(Process_Message message);
+
+// --- Process methods --- // 
+static List * readyQs[3];
+static List * waitForSendQ;
+static List * waitForReplyQ;
+
+// For tracking the appropriate process, theoretically
+// there should be about LIST_MAX_NUM_NODES amount of 
+// processes. Available pids are stored in a stack like structure
+static priority processTracker[LIST_MAX_NUM_NODES];
+static int availablePids[LIST_MAX_NUM_NODES];
+static int availablePidIndex = 0;
+void initializePidTracking();
+int getAvailablePid();
+void returnAvailablePid(int pid);
+
+void initializeQueues();
+int appendToQueue(Process_PCB * process);
+int createProcess(priority processPriority);
+int forkProcess(Process_PCB * process);
+int killProcess(int pid);
+
+bool searchProcess(void * process, void * comparison);
 
 #endif
