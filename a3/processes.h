@@ -53,23 +53,35 @@ Process_Message initProcessMessage(int sendingPid, int receivingPid, char * mess
 void printProcess(Process_PCB process);
 void printMessage(Process_Message message);
 
-// --- Process methods --- // 
-static List * readyQs[3];
-static List * waitForSendQ;
-static List * waitForReplyQ;
+// --- Process helper methods --- //
 
-// For tracking the appropriate process, theoretically
-// there should be about LIST_MAX_NUM_NODES amount of 
-// processes. Available pids are stored in a stack like structure
-static priority processTracker[LIST_MAX_NUM_NODES];
+// For tracking which queue a certain process is
+// in by storing a List pointer associated with
+// the specified Pid.
+static List * processTracker[LIST_MAX_NUM_NODES];
 static int availablePids[LIST_MAX_NUM_NODES];
 static int availablePidIndex = 0;
 void initializePidTracking();
 int getAvailablePid();
 void returnAvailablePid(int pid);
+List * getQueueOfProcess(int pid);
+void updateProcessTracker(int pid, List * queue);
+
+// A flexible prepend for any queue
+int prependToQueue(Process_PCB * process, List * queue);
+// A flexible trim for any queue
+Process_PCB * trimFromQueue(List * queue);
+
+
+// --- Process methods --- // 
+static List * readyQs[3];
+static List * waitForReceiveQ;
+static List * waitForReplyQ;
 
 void initializeQueues();
-int appendToQueue(Process_PCB * process);
+
+int prependToReadyQueue(Process_PCB * process);
+Process_PCB * trimFromReadyQueue(priority processPriority);
 int createProcess(priority processPriority);
 int forkProcess(Process_PCB * process);
 int killProcess(int pid);
