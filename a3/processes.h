@@ -6,7 +6,6 @@
 #include <string.h>
 #include <stdbool.h>
 #include "list.h"
-#include "semaphores.h"
 
 #define MAX_MESSAGE_LENGTH 40
 

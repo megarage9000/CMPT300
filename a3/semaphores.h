@@ -15,13 +15,20 @@ struct Semaphore_s {
     List * blockedProccesses;
 };
 
-void initialize();
+void initializeSemaphoreArray();
+
 Process_PCB * semaphoreV(int id);
 void semaphoreP(int id, Process_PCB * process);
-void createSemaphore(int id);
+
+void createSemaphore(int id, int sVal);
+void destroySemaphore(int id);
 Semaphore * getSemaphore(int id);
 Process_PCB * dequeueFromSemaphore(int id);
 int queueToSemaphore(int id, Process_PCB * process);
+
+void printSemaphore(int id);
+void printAllSemaphores();
+void destroyAllSemaphores();
 static Semaphore * semaphores[NUM_SEMAPHORES];
 
 #endif

@@ -27,7 +27,9 @@ Process_Message initializeProcessMessage(int sendingPid, int receivingPid, char 
 void printProcess(Process_PCB process) {
     printf("Process: \n - pid = %d\n - priority = %d\n - state = %d\n", 
         process.pid, process.processPriority, process.processState);
-    printMessage(*(process.message));
+    if(process.message != NULL){
+        printMessage(*(process.message));
+    }
 }
 
 void printMessage(Process_Message message) {

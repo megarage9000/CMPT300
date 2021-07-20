@@ -2,6 +2,7 @@
 #define COMMANDS_H
 
 #include "processes.h"
+#include "semaphores.h"
 
 #define INIT_PROCESS_PID -1
 
