@@ -7,17 +7,24 @@ void initialize(){
     }
 }
 
-bool semaphoreV(int id){
+Process_PCB * semaphoreV(int id){
     Semaphore sem = *semaphores[id];
     sem.s++;
-    if(sem.s >= 0) return true;
-    else return false;
+    if(sem.s > 0) {
+        return dequeueFromSemaphore(id);
+    }
+    else{
+        return NULL;
+    }
 }
-bool semaphoreP(int id){
+void semaphoreP(int id, Process_PCB * process){
     Semaphore sem = *semaphores[id];
-    sem.s--;
-    if(sem.s < 0) return true;
-    else return false;
+    if(sem.s > 0) {
+        sem.s--;
+        if(sem.s <= 0) {
+            queueToSemaphore(id, process);
+        }
+    }
 }
 
 void createSemaphore(int id) {
@@ -32,4 +39,14 @@ void createSemaphore(int id) {
 
 Semaphore * getSemaphore(int id) {
     return semaphores[id];
+}
+
+Process_PCB * dequeueFromSemaphore(int id) {
+    Semaphore * sem = getSemaphore(id);
+    return List_trim(sem->blockedProccesses);
+}
+
+int queueToSemaphore(int id, Process_PCB * process){
+    Semaphore * sem = getSemaphore(id);
+    return List_prepend(sem->blockedProccesses, process);
 }

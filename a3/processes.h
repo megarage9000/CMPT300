@@ -9,7 +9,7 @@
 #include "semaphores.h"
 
 #define MAX_MESSAGE_LENGTH 40
-#define INIT_PROCESS_PID -1
+
 
 // --- Process PCB and Messages --- //
 typedef enum priority_e priority;

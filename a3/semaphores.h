@@ -3,6 +3,8 @@
 
 #include "stdio.h"
 #include "list.h"
+#include "processes.h"
+
 #define NUM_SEMAPHORES 5
 
 // --- Semaphores --- //
@@ -14,11 +16,12 @@ struct Semaphore_s {
 };
 
 void initialize();
-bool semaphoreV(int id);
-bool semaphoreP(int id);
+Process_PCB * semaphoreV(int id);
+void semaphoreP(int id, Process_PCB * process);
 void createSemaphore(int id);
 Semaphore * getSemaphore(int id);
-
+Process_PCB * dequeueFromSemaphore(int id);
+int queueToSemaphore(int id, Process_PCB * process);
 static Semaphore * semaphores[NUM_SEMAPHORES];
 
 #endif

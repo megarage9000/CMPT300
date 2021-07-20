@@ -1,5 +1,10 @@
 #include "commands.h"
 
+// TODO: figure out blocking process behaviour
+// - Begin testing
+// - Implement send / receive / reply
+// - Finish implementing Semaphore
+
 // --- Process helper methods --- //
 void initializePidTracking(){
     for(int i = 0; i < LIST_MAX_NUM_NODES; i++) {
@@ -67,6 +72,28 @@ Process_PCB * trimFromQueue(List * queue) {
 
 }
 
+// Finds the process of given pid and removes it, also
+// updates process tracker to NULL
+Process_PCB * searchForProcess(int pid){
+    List * queueToSearch = getQueueOfProcess(pid);
+    if(queueToSearch != NULL) {
+        List_first(queueToSearch);
+        Process_PCB * process = List_search(queueToSearch, searchProcess, &pid);
+        if(process == NULL) {
+            return NULL;
+        }
+        else {
+            Process_PCB * process = (Process_PCB*)List_remove(queueToSearch);
+            updateProcessTracker(process->pid, NULL);
+            returnAvailablePid(process->pid);
+            return process;
+        }
+    }
+    else {
+        return NULL;
+    }
+}
+
 // --- Process methods --- // 
 
 void initialize() {
@@ -120,23 +147,14 @@ int forkProcess(Process_PCB * process) {
     return prependToReadyQueue(forkedProcess);
 }
 
-// Finds the process of given pid and removes it, also
-// updates process tracker to NULL
+
 int killProcess(int pid) {
-    List * queueToSearch = getQueueOfProcess(pid);
-    if(queueToSearch != NULL) {
-        Process_PCB * process = List_search(queueToSearch, searchProcess, &pid);
-        if(process == NULL) {
-            return -1;
-        }
-        else {
-            List_remove(queueToSearch);
-            updateProcessTracker(process->pid, NULL);
-            returnAvailablePid(process->pid);
-            return 0;
-        }
+    Process_PCB * process = searchForProcess(pid);
+    if(process != NULL) {
+        free(process);
+        return 0;
     }
-    else {
+    else{
         return -1;
     }
 }
