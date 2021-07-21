@@ -42,6 +42,6 @@ void testSemaphores() {
 }
 
 int main() {
-
+    testSemaphores();
 }
 

@@ -7,9 +7,7 @@
 #define INIT_PROCESS_PID -1
 
 static List * readyQs[3];
-static List * waitForReceiveQ;
-static List * waitForReplyQ;
-static List * messageQ;
+
 static Process_PCB * currentProcess;
 static Process_PCB * initProcess = &(Process_PCB){
     .pid = INIT_PROCESS_PID,

@@ -10,8 +10,7 @@ Process_PCB initializeProcess(int pid, priority priority, state state) {
         NULL
     };
 }
-Process_Message initializeProcessMessage(int sendingPid, int receivingPid, char * message, int messageSize){
-
+Process_Message initializeProcessMessage(int sendingPid, int receivingPid, char * message, int messageSize, message_state msg_state){
     Process_Message processMessage;
     processMessage.sendingPid = sendingPid;
     processMessage.receivingPid = receivingPid;
@@ -21,6 +20,7 @@ Process_Message initializeProcessMessage(int sendingPid, int receivingPid, char 
     else {
         strcpy(processMessage.receivedMessage, message);
     }
+    processMessage.state = msg_state;
     return processMessage;
 }
 
@@ -37,3 +37,24 @@ void printMessage(Process_Message message) {
         message.sendingPid, message.receivingPid, message.receivedMessage);
 }
 
+
+bool ifEqualProcesses(Process_PCB processA, Process_PCB processB) {
+    bool matchingPid = (processA.pid == processB.pid);
+    bool matchingPriority = (processA.pid == processB.pid);
+    bool matchingState = (processA.processState == processA.processState);
+    bool matchingMessage = (processA.message == processB.message);
+    return (matchingPid && matchingPriority && matchingState && matchingMessage);
+}
+
+
+void freeProcess(void * process) {
+    void* message = ((Process_PCB*)process)->message;
+    freeMessage(message);
+    free(process);
+    process = NULL;
+}
+
+void freeMessage(void * message){
+    free(message);
+    message = NULL;
+}

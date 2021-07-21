@@ -78,11 +78,13 @@ Process_PCB * searchForProcess(int pid){
     List * queueToSearch = getQueueOfProcess(pid);
     if(queueToSearch != NULL) {
         List_first(queueToSearch);
+        // Find the process
         Process_PCB * process = List_search(queueToSearch, searchProcess, &pid);
         if(process == NULL) {
             return NULL;
         }
         else {
+            // Remove the process from the queue and return it
             Process_PCB * process = (Process_PCB*)List_remove(queueToSearch);
             updateProcessTracker(process->pid, NULL);
             returnAvailablePid(process->pid);
@@ -105,9 +107,6 @@ void initializeQueues() {
     readyQs[low] = List_create();
     readyQs[medium] = List_create();
     readyQs[high] = List_create();
-    waitForReceiveQ = List_create();
-    waitForReplyQ = List_create();
-    messageQ = List_create();
 }
 
 // Simple abstractions for ready queues
@@ -147,7 +146,7 @@ int forkProcess(Process_PCB * process) {
     return prependToReadyQueue(forkedProcess);
 }
 
-
+// Remove process from the system entirely
 int killProcess(int pid) {
     Process_PCB * process = searchForProcess(pid);
     if(process != NULL) {
@@ -161,19 +160,7 @@ int killProcess(int pid) {
 
 void quantum() {
     // Remove the process and put it back to appropriate queue
-    state processState = currentProcess->processState;
-    if(processState == blockedReceive) {
-        prependToQueue(currentProcess, waitForReceiveQ);
-    } 
-    else if(processState == blockedReply) {
-        prependToQueue(currentProcess, waitForReplyQ);
-    }
-    // TODO add a block for semaphores
-    else {
-        if(currentProcess != initProcess) {
-            prependToReadyQueue(currentProcess);
-        }
-    }
+     
 
     // Fetch a new process to run
 

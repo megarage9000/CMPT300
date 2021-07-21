@@ -15,20 +15,29 @@ struct Semaphore_s {
     List * blockedProccesses;
 };
 
+// Storage for the semaphores. Since there
+// are a fixed amount, we use a static array
+static Semaphore * semaphores[NUM_SEMAPHORES];
 void initializeSemaphoreArray();
 
+// Blocking / Unblocking methods
 Process_PCB * semaphoreV(int id);
 void semaphoreP(int id, Process_PCB * process);
 
+// Creating / Destroying semaphores
 void createSemaphore(int id, int sVal);
 void destroySemaphore(int id);
+void destroyAllSemaphores();
+
+// Accessing / Dequeue / Queue semaphores
 Semaphore * getSemaphore(int id);
 Process_PCB * dequeueFromSemaphore(int id);
 int queueToSemaphore(int id, Process_PCB * process);
 
+// Printing Semaphores for debugging
+// - Consider using Ncurses?
 void printSemaphore(int id);
 void printAllSemaphores();
-void destroyAllSemaphores();
-static Semaphore * semaphores[NUM_SEMAPHORES];
+
 
 #endif

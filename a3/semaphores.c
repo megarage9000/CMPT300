@@ -24,6 +24,9 @@ Process_PCB * semaphoreV(int id){
 }
 
 void semaphoreP(int id, Process_PCB * process){
+    if(process == NULL){
+        return;
+    }
     Semaphore * sem = semaphores[id];
     if(sem != NULL) {
         if(sem->s > 0) {
@@ -50,6 +53,7 @@ void createSemaphore(int id, int sVal) {
 void destroySemaphore(int id) {
     Semaphore * sem = getSemaphore(id);
     if(sem != NULL) {
+        List_free(sem->blockedProccesses, freeProcess);
         free(sem);
         sem = NULL;
     }
@@ -84,7 +88,6 @@ void printSemaphore(int id) {
             printProcess(*(Process_PCB *)List_curr(sem->blockedProccesses));
             List_next(sem->blockedProccesses);
         }
-        List_first(sem->blockedProccesses);
     }
 }
 
