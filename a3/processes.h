@@ -117,4 +117,7 @@ Process_PCB * searchForProcess(int pid);
 
 // Checking if no processes exist
 bool ifNoMoreProcess();
+
+// Checking if process is blocked
+bool isProcessBlocked(Process_PCB process);
 #endif

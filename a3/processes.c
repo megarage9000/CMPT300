@@ -57,6 +57,9 @@ const char * priorityToString(priority givenPriority){
 }
 
 void printProcess(Process_PCB process) {
+    if(process.pid == INIT_PROCESS_PID) {
+        printf("INIT PROCESS || ");
+    }
     printf("Process: \n - pid = %d\n - priority = %s\n - state = %s\n", 
         process.pid, priorityToString(process.processPriority), stateToString(process.processState));
     if(process.message != NULL){
@@ -236,4 +239,12 @@ bool ifNoMoreProcess(){
         }
     }   
     return true;
+}
+
+bool isProcessBlocked(Process_PCB process){
+    return (
+        process.processState == blockedReceive ||
+        process.processState == blockedSend ||
+        process.processState == blockedSem
+    );
 }

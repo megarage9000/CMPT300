@@ -43,9 +43,9 @@ int semaphoreP(int id, Process_PCB * process){
         if(sem->s <= 0) {
             // Only add the process to blocking queue if it is not the initProcess
             if(process->pid != INIT_PROCESS_PID) {
-                printf("Blocking process with id %d!\n", process->pid);
                 int result = queueToSemaphore(id, process);
-                if(result == FAILURE){
+                if(result == SUCCESS){
+                    printf("Blocking process with id %d!\n", process->pid);
                     process->processState = blockedSem;
                 }
                 return result;

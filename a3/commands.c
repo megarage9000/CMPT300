@@ -8,12 +8,7 @@
 
 // --- Process methods --- // 
 
-void initialize() {
-    initializeQueues();
-    initializeMessageQueues();
-    initializeSemaphoreArray();
-    currentProcess = &initProcess;
-}
+
 
 void initializeQueues() {
     readyQs[low] = List_create();
@@ -39,6 +34,14 @@ void destroyMessageQueues() {
     List_free(messageQ, freeMessage);
 }
 
+void initializeProgram() {
+    initializeQueues();
+    initializeMessageQueues();
+    initializeSemaphoreArray();
+    initializePidTracking();
+    currentProcess = &initProcess;
+}
+
 void terminateProgram(){
     destroyMessageQueues();
     destroyQueues();
@@ -51,7 +54,7 @@ void terminateProgram(){
 // Simple abstractions for ready queues
 int prependToReadyQueue(Process_PCB * process) {
     if(process->processPriority != none){
-        return prependToQueue(process, readyQs[process->processState]);
+        return prependToQueue(process, readyQs[process->processPriority]);
     }
     else{
         return FAILURE;
@@ -108,9 +111,10 @@ int killProcess(int pid) {
 
 void quantum() {
     // Remove the process and put it back to appropriate queue
-     if(currentProcess != NULL && currentProcess != &initProcess) {
-         prependToReadyQueue(currentProcess);
-     }
+    // only if it is not blocked and not init process
+    if(isProcessBlocked(*currentProcess) == false && currentProcess != &initProcess) {
+        prependToReadyQueue(currentProcess);
+    }
 
     // Fetch a new process to run
     // - Search from highest to lowest priority
@@ -259,35 +263,6 @@ int receiveMessage(Process_PCB * process) {
 
 }
 
-
-
-// Prints info on current process
-void printProcInfo(){
-    printf("Current process: \n");
-    printProcess(*currentProcess);
-}
-
-// Prints info of all the system
-void totalInfo(){
-    printProcInfo();
-    for(int i = 0; i < 3; i++) {
-        printf("Processes in %s queue: \n", priorityToString(i));
-        printProcessesInList(readyQs[i]);
-    }
-
-    printf("Processes awaiting receive:\n");
-    printProcessesInList(waitForReceiveQ);
-
-    printf("Processes awaiting reply:\n");
-    printProcessesInList(waitForReplyQ);
-
-    printf("Messages in message queue:\n");
-    printMessagesInList(messageQ);
-
-    printf("All Semaphore information");
-    printAllSemaphores();
-}
-
 void printProcessesInList(List * list) {
     List_first(list);
     int count = List_count(list);
@@ -306,6 +281,40 @@ void printMessagesInList(List * list) {
     }
 }
 
+// Prints info on current process
+void printProcInfo(){
+    printf("############## CURRENT PROCESS INFO ##################\n");
+    printf("Current process: \n");
+    printProcess(*currentProcess);
+    printf("############## CURRENT PROCESS INFO ##################\n");
+}
+
+// Prints info of all the system
+void totalInfo(){
+    printf("############### TOTAL INFO #################\n");
+    printf("Current process: \n");
+    printProcess(*currentProcess);
+    for(int i = 0; i < 3; i++) {
+        printf("Processes in %s queue: \n", priorityToString(i));
+        printProcessesInList(readyQs[i]);
+    }
+
+    printf("Processes awaiting receive:\n");
+    printProcessesInList(waitForReceiveQ);
+
+    printf("Processes awaiting reply:\n");
+    printProcessesInList(waitForReplyQ);
+
+    printf("Messages in message queue:\n");
+    printMessagesInList(messageQ);
+
+    printf("All Semaphore information:\n");
+    printAllSemaphores();
+    printf("############### TOTAL INFO #################\n");
+}
+
+
+
 // --- Callers to functions in semaphores.h --- 
 int createSem(int id){
     return createSemaphore(id, 1);
@@ -318,6 +327,7 @@ int semP(int id) {
     // call quantum for preemption
     // - WILL NOT WORK ON INIT_PROCESS
     if(result == SUCCESS && currentProcess->processState == blockedSem){
+        printf("Calling quantum in semP()\n");
         quantum();
     }
     return result;

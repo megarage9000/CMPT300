@@ -4,8 +4,6 @@
 #include "processes.h"
 #include "semaphores.h"
 
-
-
 static List * readyQs[3];
 static List * waitForReceiveQ;
 static List * waitForReplyQ;
@@ -16,11 +14,7 @@ static Process_PCB * currentProcess;
 
 
 // --- Process methods --- // 
-void initialize();
-void initializeQueues();
-void initializeMessageQueues();
-void destroyQueues();
-void destroyMessageQueues();
+void initializeProgram();
 void terminateProgram();
 
 int prependToReadyQueue(Process_PCB * process);
