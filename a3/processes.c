@@ -116,7 +116,7 @@ bool searchProcess(void * process, void * comparison) {
 
 Process_PCB * getProcessFromList(int pid, List * list) {
     List_first(list);
-    Process_PCB * process = List_search(list, ((void*)&pid), searchProcess);
+    Process_PCB * process = List_search(list,  searchProcess, ((void*)&pid));
     if(process != NULL) {
         return List_remove(list);
     }
@@ -126,9 +126,9 @@ Process_PCB * getProcessFromList(int pid, List * list) {
 // Process_Message
 // - For process messages awaiting receives / replies
 bool searchMessageReceive(void * message, void * receivingPid) {
-    Process_Message * messagePtr = ((Process_Message *)message);
+    int messageReceivePid = ((Process_Message *)message)->receivingPid;
     int receive = *((int *)receivingPid);
-    return messagePtr->receivingPid == receive;
+    return (messageReceivePid == receive);
 }
 
 bool searchMessageSending(void * message, void * sendingPid){
@@ -137,9 +137,9 @@ bool searchMessageSending(void * message, void * sendingPid){
     return messagePtr->sendingPid == send;
 }
 
-Process_Message * getMessageFromList(int pid, List * list, COMPARATOR_FN compareFunc){
+Process_Message * getMessageFromList(int pid, List * list, COMPARATOR_FN compare){
     List_first(list);
-    Process_Message * message = List_search(list, ((void*)&pid), compareFunc);
+    Process_Message * message = List_search(list, compare, ((void *)&pid));
     if(message != NULL) {
         return List_remove(list);
     }
@@ -189,7 +189,7 @@ void updateProcessTracker(int pid, List * queue){
 // Adds process to a queue, also executes updateProcessTracker
 // for associate queue
 int prependToQueue(Process_PCB * process, List * queue) {
-    if(List_prepend(queue, process) == -1){
+    if(List_prepend(queue, process) == FAILURE){
         free(process);
         return FAILURE;
     }
@@ -221,7 +221,7 @@ Process_PCB * searchForProcess(int pid){
         Process_PCB * process = getProcessFromList(pid, queueToSearch);
         if(process != NULL) {
             updateProcessTracker(pid, NULL);
-            return NULL;
+            return process;
         }
         else{
             return NULL;

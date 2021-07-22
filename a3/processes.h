@@ -92,7 +92,7 @@ Process_PCB * getProcessFromList(int pid, List * list);
 // For List_Search (Messages)
 bool searchMessageReceive(void * message, void * receivingPid);
 bool searchMessageSending(void * message, void * sendingPid);
-Process_Message * getMessageFromList(int pid, List * list, COMPARATOR_FN compareFunc);
+Process_Message * getMessageFromList(int pid, List * list, COMPARATOR_FN compare);
 
 // For tracking which queue a certain process is
 // in by storing a List pointer associated with

@@ -319,6 +319,9 @@ void* List_remove(List* pList){
         if(current == pList->head){
             pList->head = pList->current;
         }
+        if(current == pList->tail) {
+            pList->tail = current->prev;
+        }
         
         Node * currentPrev = current->prev;
         Node * currentNext = current->next;

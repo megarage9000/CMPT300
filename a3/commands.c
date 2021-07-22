@@ -87,8 +87,9 @@ int forkProcess() {
         return FAILURE;
     }
     Process_PCB * forkedProcess = (Process_PCB *)malloc(sizeof(Process_PCB));
-    forkedProcess->processPriority = process->processPriority;
+    *forkedProcess = initializeProcess(getAvailablePid(), process->processPriority, process->processState);
     forkedProcess->message = process->message;
+    forkedProcess->processState = ready;
     return prependToReadyQueue(forkedProcess);
 }
 
@@ -99,8 +100,12 @@ int killProcess(int pid) {
     if(ifNoMoreProcess() && pid == INIT_PROCESS_PID) {
         terminateProgram();
     }
+    else if(pid == currentProcess->pid){
+        quantum();
+    }
     Process_PCB * process = searchForProcess(pid);
     if(process != NULL) {
+        printf("Freeing process of id %d!\n", pid);
         freeProcess(process);
         return SUCCESS;
     }
@@ -221,10 +226,10 @@ int replyMessage(char * message, int pidToReplyTo) {
 
     // Search for a process awaiting a reply in the replyQ
     Process_PCB * processAwaitingReply = getProcessFromList(pidToReplyTo, waitForReplyQ);
-    if(process != NULL) {
+    if(processAwaitingReply != NULL) {
         processAwaitingReply->message = processMessage;
         processAwaitingReply->processState = ready;
-        return prependToReadyQueue(process);
+        return prependToReadyQueue(processAwaitingReply);
     }
 
     // If there is no process awaiting the replyQ, free the message.
@@ -236,8 +241,8 @@ int replyMessage(char * message, int pidToReplyTo) {
 
 // Procs the process to await a receive
 // - Blocks the process if no message is waiting in messageQ
-int receiveMessage(Process_PCB * process) {
-
+int receiveMessage() {
+    Process_PCB * process = currentProcess;
     // Look for message in messageQ, if any
     Process_Message * receivedMessage = getMessageFromList(process->pid, messageQ, searchMessageReceive);
     if(receivedMessage != NULL) {
@@ -264,8 +269,10 @@ int receiveMessage(Process_PCB * process) {
 }
 
 void printProcessesInList(List * list) {
-    List_first(list);
     int count = List_count(list);
+    if(count > 0) {
+    }
+    List_first(list);
     for(int i = 0; i < count; i++) {
         printProcess(*(Process_PCB *)List_curr(list));
         List_next(list);
@@ -273,8 +280,10 @@ void printProcessesInList(List * list) {
 }
 
 void printMessagesInList(List * list) {
-    List_first(list);
     int count = List_count(list);
+    if(count > 0) {
+    }
+    List_first(list);
     for(int i = 0; i < count; i++) {
         printMessage(*(Process_Message *)List_curr(list));
         List_next(list);
@@ -298,7 +307,16 @@ void totalInfo(){
         printf("Processes in %s queue: \n", priorityToString(i));
         printProcessesInList(readyQs[i]);
     }
-
+    
+    if(waitForReceiveQ->head == NULL) {
+        printf("ReceiveQ has head nullptr\n");
+    }
+    if(waitForReceiveQ->tail == NULL) {
+        printf("ReceiveQ has tail nullptr\n");
+    }
+    if(waitForReceiveQ->current == NULL) {
+        printf("ReceiveQ has current nullptr\n");
+    } 
     printf("Processes awaiting receive:\n");
     printProcessesInList(waitForReceiveQ);
 
