@@ -19,7 +19,9 @@ static Process_PCB * currentProcess;
 void initialize();
 void initializeQueues();
 void initializeMessageQueues();
+void destroyQueues();
 void destroyMessageQueues();
+void terminateProgram();
 
 int prependToReadyQueue(Process_PCB * process);
 Process_PCB * trimFromReadyQueue(priority processPriority);

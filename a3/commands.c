@@ -11,6 +11,7 @@
 void initialize() {
     initializeQueues();
     initializeMessageQueues();
+    initializeSemaphoreArray();
     currentProcess = &initProcess;
 }
 
@@ -18,6 +19,33 @@ void initializeQueues() {
     readyQs[low] = List_create();
     readyQs[medium] = List_create();
     readyQs[high] = List_create();
+}
+
+void initializeMessageQueues() {
+    waitForReceiveQ = List_create();
+    waitForReplyQ = List_create();
+    messageQ = List_create();
+}
+
+void destroyQueues() {
+    List_free(readyQs[high], freeProcess);
+    List_free(readyQs[medium], freeProcess);
+    List_free(readyQs[low], freeProcess);
+}
+
+void destroyMessageQueues() {
+    List_free(waitForReceiveQ, freeProcess);
+    List_free(waitForReplyQ, freeProcess);
+    List_free(messageQ, freeMessage);
+}
+
+void terminateProgram(){
+    destroyMessageQueues();
+    destroyQueues();
+    destroyAllSemaphores();
+    for(int i = 0; i < LIST_MAX_NUM_NODES; i++) {
+        updateProcessTracker(i, NULL);
+    }
 }
 
 // Simple abstractions for ready queues
@@ -51,6 +79,9 @@ int createProcess(priority processPriority) {
 
 // Forks a process, returns -1 on failure 
 int forkProcess(Process_PCB * process) {
+    if(process->pid == INIT_PROCESS_PID){
+        return -1;
+    }
     Process_PCB * forkedProcess = (Process_PCB *)malloc(sizeof(Process_PCB));
     forkedProcess->processPriority = process->processPriority;
     forkedProcess->message = process->message;
@@ -59,6 +90,9 @@ int forkProcess(Process_PCB * process) {
 
 // Remove process from the system entirely
 int killProcess(int pid) {
+    if(pid == INIT_PROCESS_PID) {
+        terminateProgram();
+    }
     Process_PCB * process = searchForProcess(pid);
     if(process != NULL) {
         free(process);
@@ -71,33 +105,34 @@ int killProcess(int pid) {
 
 void quantum() {
     // Remove the process and put it back to appropriate queue
-     
+     if(currentProcess != NULL && currentProcess != &initProcess) {
+         prependToReadyQueue(currentProcess);
+     }
 
     // Fetch a new process to run
+    // - Search from highest to lowest priority
+    if(List_count(readyQs[high]) > 0) {
+        currentProcess = trimFromReadyQueue(high);
+    }
+    else if(List_count(readyQs[medium]) > 0) {
+        currentProcess = trimFromReadyQueue(medium);
+    }
+    else if(List_count(readyQs[low]) > 0) {
+        currentProcess = trimFromReadyQueue(low);
+    }
+    else {
+        currentProcess = &initProcess;
+    }
 
-
-    // Shift Queues
-
-
-    // Add new processes if any are unblocked in semaphores and other blocked queues
 }
 
-void initializeMessageQueues() {
-    waitForReceiveQ = List_create();
-    waitForReplyQ = List_create();
-    messageQ = List_create();
-}
 
-void destroyMessageQueues() {
-    List_free(waitForReceiveQ, freeProcess);
-    List_free(waitForReplyQ, freeProcess);
-    List_free(messageQ, freeMessage);
-}
 
 
 // Sends a message to a process.
-// - Blocks the sending process immediately 
-// - Adds the process waiting for a send to given readyQueue, if any
+// - Blocks the sending process immediately if no process is awaiting
+// its send
+// - Adds the process waiting for the send to given readyQueue, if any
 // - Sends the message to messageQ if no process is there to receive
 int sendMessage(char * message, Process_PCB * process, int pidToSendTo) {
     Process_Message * processMessage = (Process_Message *)malloc(sizeof(Process_Message));
@@ -137,6 +172,7 @@ int sendMessage(char * message, Process_PCB * process, int pidToSendTo) {
 
             // Check if adding the message resulted an error before blocking process
             if(resultAddMessage == -1) {
+                free(processMessage);
                 return resultAddMessage;
             }
             else {
@@ -153,8 +189,9 @@ int sendMessage(char * message, Process_PCB * process, int pidToSendTo) {
 }
 
 // Replies a message to a process.
-// - Returns a process waiting for a reply, if any.
 // - A non-blocking send in simpler terms
+// - When it finds a process awaiting for reply, 
+// then add to appropriate readyQueue
 int replyMessage(char * message, Process_PCB * process, int pidToReplyTo) {
     Process_Message * processMessage = (Process_Message *)malloc(sizeof(Process_Message));
     *processMessage = initializeProcessMessage(

@@ -24,17 +24,61 @@ Process_Message initializeProcessMessage(int sendingPid, int receivingPid, char 
     return processMessage;
 }
 
+// Private functions to convert priority / state to strings
+
+const char * stateToString(state givenState) {
+    switch(givenState) {
+        case blockedReceive:
+            return "blocked on receive";
+        case blockedSend:
+            return "blocked on send";
+        case blockedSem:
+            return "blocked on semaphore";
+        case ready:
+            return "ready to execute";
+        case running:
+            return "current executing";
+        default:
+            return "stateless";
+    }
+}
+
+const char * priorityToString(priority givenPriority){
+    switch(givenPriority) {
+        case low:
+            return "low";
+        case medium:
+            return "medium";
+        case high:
+            return "high";
+        default:
+            return "none";
+    }
+}
+
 void printProcess(Process_PCB process) {
-    printf("Process: \n - pid = %d\n - priority = %d\n - state = %d\n", 
-        process.pid, process.processPriority, process.processState);
+    printf("Process: \n - pid = %d\n - priority = %s\n - state = %s\n", 
+        process.pid, priorityToString(process.processPriority), stateToString(process.processState));
     if(process.message != NULL){
         printMessage(*(process.message));
     }
 }
 
+// Private function to convert message state to string
+const char * messageStateToString(message_state givenMessageState) {
+    switch(givenMessageState) {
+        case messageReply:
+            return "message reply";
+        case messageSend:
+            return "message send";
+        default:
+            return "none";
+    }
+}
+
 void printMessage(Process_Message message) {
-    printf("Process Message: \n - sending pid = %d\n - receiving pid = %d\n - message = %s\n",
-        message.sendingPid, message.receivingPid, message.receivedMessage);
+    printf("Process Message: \n - sending pid = %d\n - receiving pid = %d\n - message = %s\n - message state = %s\n",
+        message.sendingPid, message.receivingPid, message.receivedMessage, messageStateToString(message.state));
 }
 
 

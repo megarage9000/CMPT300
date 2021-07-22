@@ -21,8 +21,16 @@ static Semaphore * semaphores[NUM_SEMAPHORES];
 void initializeSemaphoreArray();
 
 // Blocking / Unblocking methods
+// Semaphore V()
+// - Simply increments s
+// - If s > 0, unblock the processes in the associated
+// semaphore
+// - Returns an unblocked process
 Process_PCB * semaphoreV(int id);
-void semaphoreP(int id, Process_PCB * process);
+// Semaphore P()
+// - Decrements s only if s > 0
+// - Blocks the process calling the semaphore P() if s <= 0
+int semaphoreP(int id, Process_PCB * process);
 
 // Creating / Destroying semaphores
 void createSemaphore(int id, int sVal);

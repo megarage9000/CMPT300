@@ -7,6 +7,11 @@ void initializeSemaphoreArray(){
     }
 }
 
+// Semaphore V()
+// - Simply increments s
+// - If s > 0, unblock the processes in the associated
+// semaphore
+// - Returns an unblocked process
 Process_PCB * semaphoreV(int id){
     Semaphore * sem = semaphores[id];
     if(sem != NULL){
@@ -23,21 +28,37 @@ Process_PCB * semaphoreV(int id){
     return NULL;
 }
 
-void semaphoreP(int id, Process_PCB * process){
+// Semaphore P()
+// - Decrements s only if s > 0
+// - Blocks the process calling the semaphore P() if s <= 0
+int semaphoreP(int id, Process_PCB * process){
     if(process == NULL){
-        return;
+        return 0;
     }
     Semaphore * sem = semaphores[id];
     if(sem != NULL) {
         if(sem->s > 0) {
             sem->s--;
-            if(sem->s <= 0) {
+        }
+        if(sem->s <= 0) {
+            // Only add the process to blocking queue if it is not the initProcess
+            if(process->pid != INIT_PROCESS_PID) {
                 printf("Blocking process with id %d!\n", process->pid);
-                process->processState = blockedSem;
-                queueToSemaphore(id, process);
+                int result = queueToSemaphore(id, process);
+                if(result == -1){
+                    process->processState = blockedSem;
+                }
+                return result;
+            }
+            // If it's the init process, always return success as blocking does not
+            // occur on that process
+            else {
+                return 0;
             }
         }
     }
+    // return failure since the id of semaphore is not defined
+    return -1;
 }
 
 void createSemaphore(int id, int sVal) {
