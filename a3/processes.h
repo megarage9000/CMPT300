@@ -8,6 +8,7 @@
 #include "list.h"
 
 #define MAX_MESSAGE_LENGTH 40
+#define INIT_PROCESS_PID -56
 
 
 // --- Process PCB and Messages --- //
@@ -18,7 +19,7 @@ enum priority_e {low, medium, high, none};
 
 // State values
 typedef enum state_e state;
-enum state_e {blockedReceive, blockedReply, blockedSem, ready, running, stateless};
+enum state_e {blockedReceive, blockedSend, blockedSem, ready, running, stateless};
 
 // Message state values
 typedef enum message_state_e message_state;
@@ -57,6 +58,14 @@ static const Process_PCB emptyProcess = {
     .message = NULL
 };
 
+
+static Process_PCB initProcess = (Process_PCB){
+    .pid = INIT_PROCESS_PID,
+    .processPriority = none,
+    .processState = ready,
+    .message = NULL
+};
+
 // Creating Processes / Messages
 Process_PCB initializeProcess(int pid, priority priority, state state);
 Process_Message initializeProcessMessage(int sendingPid, int receivingPid, char * message, int messageSize,  message_state msg_state);
@@ -70,5 +79,37 @@ void printMessage(Process_Message message);
 bool ifEqualProcesses(Process_PCB processA, Process_PCB processB);
 void freeProcess(void * process);
 void freeMessage(void * message);
+
+// For List_Search
+bool searchProcess(void * process, void * comparison);
+// Looks for a specific process in a list. If found, remove item
+// and return, else return NULL
+Process_PCB * getProcessFromList(int pid, List * list);
+
+// For List_Search (Messages)
+bool searchMessageReceive(void * message, void * receivingPid);
+bool searchMessageSending(void * message, void * sendingPid);
+Process_Message * getMessageFromList(int pid, List * list, COMPARATOR_FN compareFunc);
+
+// For tracking which queue a certain process is
+// in by storing a List pointer associated with
+// the specified Pid.
+static List * processTracker[LIST_MAX_NUM_NODES];
+static int availablePids[LIST_MAX_NUM_NODES];
+static int availablePidIndex = 0;
+
+// - Pid management
+void initializePidTracking();
+int getAvailablePid();
+void returnAvailablePid(int pid);
+
+// Getting associated queues and updating queues
+List * getQueueOfProcess(int pid);
+void updateProcessTracker(int pid, List * queue);
+
+// Retrieving / Adding processes to queues
+int prependToQueue(Process_PCB * process, List * queue);
+Process_PCB * trimFromQueue(List * queue);
+Process_PCB * searchForProcess(int pid);
 
 #endif

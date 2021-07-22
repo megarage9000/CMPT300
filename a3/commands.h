@@ -4,43 +4,22 @@
 #include "processes.h"
 #include "semaphores.h"
 
-#define INIT_PROCESS_PID -1
+
 
 static List * readyQs[3];
+static List * waitForReceiveQ;
+static List * waitForReplyQ;
+static List * messageQ;
+
 
 static Process_PCB * currentProcess;
-static Process_PCB * initProcess = &(Process_PCB){
-    .pid = INIT_PROCESS_PID,
-    .processPriority = none,
-    .processState = stateless,
-    .message = NULL
-};
 
-// --- Process helper methods --- //
-
-// For tracking which queue a certain process is
-// in by storing a List pointer associated with
-// the specified Pid.
-static List * processTracker[LIST_MAX_NUM_NODES];
-static int availablePids[LIST_MAX_NUM_NODES];
-static int availablePidIndex = 0;
-void initializePidTracking();
-int getAvailablePid();
-void returnAvailablePid(int pid);
-List * getQueueOfProcess(int pid);
-void updateProcessTracker(int pid, List * queue);
-
-// A flexible prepend for any queue
-int prependToQueue(Process_PCB * process, List * queue);
-// A flexible trim for any queue
-Process_PCB * trimFromQueue(List * queue);
-// Search for processes
-Process_PCB * searchForProcess(int pid);
 
 // --- Process methods --- // 
-
 void initialize();
 void initializeQueues();
+void initializeMessageQueues();
+void destroyMessageQueues();
 
 int prependToReadyQueue(Process_PCB * process);
 Process_PCB * trimFromReadyQueue(priority processPriority);
@@ -51,9 +30,19 @@ int createProcess(priority processPriority);
 int forkProcess(Process_PCB * process);
 int killProcess(int pid);
 void quantum();
-void blockProcess(List * queue);
 
-bool searchProcess(void * process, void * comparison);
+// Sends a message to a process.
+// - Blocks the sending process immediately 
+// - Adds the process waiting for a send to given readyQueue, if any
+// - Sends the message to messageQ if no process is there to receive
+int sendMessage(char * message, Process_PCB * process, int pidToSendTo);
 
+// Replies a message to a process.
+// - An unblocking send in simpler terms
+int replyMessage(char * message, Process_PCB * process, int pidToReplyTo);
+
+// Procs the process to await a receive
+// - Blocks the process if no message is waiting in messageQ
+int receiveMessage(Process_PCB * process);
 
 #endif

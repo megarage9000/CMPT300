@@ -5,102 +5,13 @@
 // - Implement send / receive / reply
 // - Finish implementing Semaphore
 
-// --- Process helper methods --- //
-void initializePidTracking(){
-    for(int i = 0; i < LIST_MAX_NUM_NODES; i++) {
-        processTracker[i] = NULL;
-        availablePids[i] = i;
-    }
-}
-// Gets available Pid for a new process
-int getAvailablePid(){
-    if(availablePidIndex < LIST_MAX_NUM_NODES){
-        return availablePids[availablePidIndex++];
-    }
-    else{
-        return -1;
-    }
-}
-
-// Recycles Pid for new processes
-void returnAvailablePid(int pid){
-    if(availablePidIndex > 0) {
-        availablePids[--availablePidIndex] = pid;
-    }
-}
-
-// Returns the associated queue of a process with 
-// given pid
-List * getQueueOfProcess(int pid){
-    if(pid >= 0 && pid < LIST_MAX_NUM_NODES){
-        return processTracker[pid];
-    }
-    return NULL;
-}
-
-// Updates the associated queue of process
-void updateProcessTracker(int pid, List * queue){
-    if(pid >= 0 && pid < LIST_MAX_NUM_NODES) {
-        processTracker[pid] = queue;
-    }
-}
-
-// Adds process to a queue, also executes updateProcessTracker
-// for associate queue
-int prependToQueue(Process_PCB * process, List * queue) {
-    if(List_prepend(queue, process) == -1){
-        free(process);
-        return -1;
-    }
-    else {
-        updateProcessTracker(process->pid, queue);
-        return 0;
-    }
-}
-
-// Removes process from a queue, also updates the associated
-// queue to NULL
-Process_PCB * trimFromQueue(List * queue) {
-    Process_PCB * process = (Process_PCB *)List_trim(queue);
-    if(process != NULL) {
-        updateProcessTracker(process->pid, NULL);
-        return process;
-    }
-    else {
-        return NULL;
-    }
-
-}
-
-// Finds the process of given pid and removes it, also
-// updates process tracker to NULL
-Process_PCB * searchForProcess(int pid){
-    List * queueToSearch = getQueueOfProcess(pid);
-    if(queueToSearch != NULL) {
-        List_first(queueToSearch);
-        // Find the process
-        Process_PCB * process = List_search(queueToSearch, searchProcess, &pid);
-        if(process == NULL) {
-            return NULL;
-        }
-        else {
-            // Remove the process from the queue and return it
-            Process_PCB * process = (Process_PCB*)List_remove(queueToSearch);
-            updateProcessTracker(process->pid, NULL);
-            returnAvailablePid(process->pid);
-            return process;
-        }
-    }
-    else {
-        return NULL;
-    }
-}
 
 // --- Process methods --- // 
 
 void initialize() {
     initializeQueues();
-    currentProcess = initProcess;
+    initializeMessageQueues();
+    currentProcess = &initProcess;
 }
 
 void initializeQueues() {
@@ -171,7 +82,135 @@ void quantum() {
     // Add new processes if any are unblocked in semaphores and other blocked queues
 }
 
-bool searchProcess(void * process, void * comparison) {
-    int processPid = ((Process_PCB*)process)->pid;
-    return processPid == *((int *)comparison);
+void initializeMessageQueues() {
+    waitForReceiveQ = List_create();
+    waitForReplyQ = List_create();
+    messageQ = List_create();
 }
+
+void destroyMessageQueues() {
+    List_free(waitForReceiveQ, freeProcess);
+    List_free(waitForReplyQ, freeProcess);
+    List_free(messageQ, freeMessage);
+}
+
+
+// Sends a message to a process.
+// - Blocks the sending process immediately 
+// - Adds the process waiting for a send to given readyQueue, if any
+// - Sends the message to messageQ if no process is there to receive
+int sendMessage(char * message, Process_PCB * process, int pidToSendTo) {
+    Process_Message * processMessage = (Process_Message *)malloc(sizeof(Process_Message));
+    *processMessage = initializeProcessMessage(
+        process->pid,
+        pidToSendTo,
+        message,
+        MAX_MESSAGE_LENGTH,
+        messageSend
+    );
+
+    // If sending to the init process, don't block
+    if(pidToSendTo == INIT_PROCESS_PID) {
+        initProcess.message = processMessage;
+        return 0;
+    }
+
+    // Search for a process in waitForRecieveQueue that's waiting for a receive
+    Process_PCB* recievingProcess = getProcessFromList(pidToSendTo, waitForReceiveQ);
+    // If found, add the process to its associate ready queue
+    if(recievingProcess != NULL) {
+        recievingProcess->message = processMessage;
+        recievingProcess->processState = ready;
+        return prependToReadyQueue(recievingProcess);
+    }
+    // If not, add message to messageQ
+    else {
+        int resultAddMessage = List_prepend(messageQ, processMessage);
+
+        // If the process is the init process, don't block,
+        if(process->pid == INIT_PROCESS_PID) {
+            return resultAddMessage;
+        }
+        else {
+            // If the process is not the init process, block and return the results of 
+            // adding the queues
+
+            // Check if adding the message resulted an error before blocking process
+            if(resultAddMessage == -1) {
+                return resultAddMessage;
+            }
+            else {
+                // Add the message to replyQ
+                int resultAddToReply = prependToQueue(process, waitForReplyQ);
+                // If success, set process to blocked
+                if(resultAddToReply != -1){
+                    process->processState = blockedSend;
+                } 
+                return resultAddToReply;
+            }
+        }
+    }
+}
+
+// Replies a message to a process.
+// - Returns a process waiting for a reply, if any.
+// - A non-blocking send in simpler terms
+int replyMessage(char * message, Process_PCB * process, int pidToReplyTo) {
+    Process_Message * processMessage = (Process_Message *)malloc(sizeof(Process_Message));
+    *processMessage = initializeProcessMessage(
+        process->pid,
+        pidToReplyTo,
+        message,
+        MAX_MESSAGE_LENGTH,
+        messageReply
+    );
+
+    // If sending to the init process, don't block
+    if(pidToReplyTo == INIT_PROCESS_PID) {
+        initProcess.message = processMessage;
+        return 0;
+    }
+
+    // Search for a process awaiting a reply in the replyQ
+    Process_PCB * processAwaitingReply = getProcessFromList(pidToReplyTo, waitForReplyQ);
+    if(process != NULL) {
+        processAwaitingReply->message = processMessage;
+        processAwaitingReply->processState = ready;
+        return prependToReadyQueue(process);
+    }
+
+    // If there is no process awaiting the replyQ, free the message.
+    // This also handles the initProcess situation, as blocking is not
+    // necessary for reply
+    free(processMessage);
+    return 0;
+}
+
+// Procs the process to await a receive
+// - Blocks the process if no message is waiting in messageQ
+int receiveMessage(Process_PCB * process) {
+
+    // Look for message in messageQ, if any
+    Process_Message * receivedMessage = getMessageFromList(process->pid, messageQ, searchMessageReceive);
+    if(receivedMessage != NULL) {
+        process->message = receivedMessage;    
+        return 0;
+    }
+    // No message to receive
+    else {
+        // If init, don't block
+        if(process->pid == INIT_PROCESS_PID){
+            return 0;
+        }
+        
+        // If not init, block
+        int result = prependToQueue(process, waitForReceiveQ); 
+        if(result != -1){
+            process->processState = blockedReceive;
+        }  
+        return result;
+    }
+
+}
+
+
