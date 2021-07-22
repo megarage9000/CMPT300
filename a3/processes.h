@@ -10,12 +10,15 @@
 #define MAX_MESSAGE_LENGTH 40
 #define INIT_PROCESS_PID -56
 
+#define FAILURE -1
+#define SUCCESS 0
 
 // --- Process PCB and Messages --- //
 
 // Priority values
 typedef enum priority_e priority;
 enum priority_e {low, medium, high, none};
+const char * priorityToString(priority givenPriority);
 
 // State values
 typedef enum state_e state;
@@ -112,4 +115,6 @@ int prependToQueue(Process_PCB * process, List * queue);
 Process_PCB * trimFromQueue(List * queue);
 Process_PCB * searchForProcess(int pid);
 
+// Checking if no processes exist
+bool ifNoMoreProcess();
 #endif

@@ -45,7 +45,7 @@ int semaphoreP(int id, Process_PCB * process){
             if(process->pid != INIT_PROCESS_PID) {
                 printf("Blocking process with id %d!\n", process->pid);
                 int result = queueToSemaphore(id, process);
-                if(result == -1){
+                if(result == FAILURE){
                     process->processState = blockedSem;
                 }
                 return result;
@@ -53,21 +53,25 @@ int semaphoreP(int id, Process_PCB * process){
             // If it's the init process, always return success as blocking does not
             // occur on that process
             else {
-                return 0;
+                return SUCCESS;
             }
         }
     }
     // return failure since the id of semaphore is not defined
-    return -1;
+    return FAILURE;
 }
 
-void createSemaphore(int id, int sVal) {
+int createSemaphore(int id, int sVal) {
     if(semaphores[id] == NULL) {
         semaphores[id] = (Semaphore *)malloc(sizeof(Semaphore));
         semaphores[id]->id = id;
         if(sVal < 0 ) sVal = 0;
         semaphores[id]->s = sVal;
         semaphores[id]->blockedProccesses = List_create();
+        return SUCCESS;
+    }
+    else{
+        return FAILURE;
     }
 }
 

@@ -156,7 +156,7 @@ int getAvailablePid(){
         return availablePids[availablePidIndex++];
     }
     else{
-        return -1;
+        return FAILURE;
     }
 }
 
@@ -188,11 +188,11 @@ void updateProcessTracker(int pid, List * queue){
 int prependToQueue(Process_PCB * process, List * queue) {
     if(List_prepend(queue, process) == -1){
         free(process);
-        return -1;
+        return FAILURE;
     }
     else {
         updateProcessTracker(process->pid, queue);
-        return 0;
+        return SUCCESS;
     }
 }
 
@@ -227,4 +227,13 @@ Process_PCB * searchForProcess(int pid){
     else {
         return NULL;
     }
+}
+
+bool ifNoMoreProcess(){
+    for(int i = 0; i < LIST_MAX_NUM_NODES; i++) {
+        if(processTracker[i] != NULL) {
+            return false;
+        }
+    }   
+    return true;
 }

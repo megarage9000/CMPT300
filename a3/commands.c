@@ -54,7 +54,7 @@ int prependToReadyQueue(Process_PCB * process) {
         return prependToQueue(process, readyQs[process->processState]);
     }
     else{
-        return -1;
+        return FAILURE;
     }
 }
 
@@ -78,9 +78,10 @@ int createProcess(priority processPriority) {
 }
 
 // Forks a process, returns -1 on failure 
-int forkProcess(Process_PCB * process) {
+int forkProcess() {
+    Process_PCB * process = currentProcess;
     if(process->pid == INIT_PROCESS_PID){
-        return -1;
+        return FAILURE;
     }
     Process_PCB * forkedProcess = (Process_PCB *)malloc(sizeof(Process_PCB));
     forkedProcess->processPriority = process->processPriority;
@@ -89,17 +90,19 @@ int forkProcess(Process_PCB * process) {
 }
 
 // Remove process from the system entirely
+// - If the current process happens to be the init_process and
+// there are no more process left, terminate
 int killProcess(int pid) {
-    if(pid == INIT_PROCESS_PID) {
+    if(ifNoMoreProcess() && pid == INIT_PROCESS_PID) {
         terminateProgram();
     }
     Process_PCB * process = searchForProcess(pid);
     if(process != NULL) {
-        free(process);
-        return 0;
+        freeProcess(process);
+        return SUCCESS;
     }
     else{
-        return -1;
+        return FAILURE;
     }
 }
 
@@ -134,7 +137,8 @@ void quantum() {
 // its send
 // - Adds the process waiting for the send to given readyQueue, if any
 // - Sends the message to messageQ if no process is there to receive
-int sendMessage(char * message, Process_PCB * process, int pidToSendTo) {
+int sendMessage(char * message, int pidToSendTo) {
+    Process_PCB * process = currentProcess;
     Process_Message * processMessage = (Process_Message *)malloc(sizeof(Process_Message));
     *processMessage = initializeProcessMessage(
         process->pid,
@@ -147,7 +151,7 @@ int sendMessage(char * message, Process_PCB * process, int pidToSendTo) {
     // If sending to the init process, don't block
     if(pidToSendTo == INIT_PROCESS_PID) {
         initProcess.message = processMessage;
-        return 0;
+        return SUCCESS;
     }
 
     // Search for a process in waitForRecieveQueue that's waiting for a receive
@@ -171,16 +175,18 @@ int sendMessage(char * message, Process_PCB * process, int pidToSendTo) {
             // adding the queues
 
             // Check if adding the message resulted an error before blocking process
-            if(resultAddMessage == -1) {
-                free(processMessage);
+            if(resultAddMessage == FAILURE) {
+                freeMessage(processMessage);
                 return resultAddMessage;
             }
             else {
                 // Add the message to replyQ
                 int resultAddToReply = prependToQueue(process, waitForReplyQ);
                 // If success, set process to blocked
-                if(resultAddToReply != -1){
+                if(resultAddToReply != FAILURE){
                     process->processState = blockedSend;
+                    // Change up current process
+                    quantum();
                 } 
                 return resultAddToReply;
             }
@@ -192,7 +198,8 @@ int sendMessage(char * message, Process_PCB * process, int pidToSendTo) {
 // - A non-blocking send in simpler terms
 // - When it finds a process awaiting for reply, 
 // then add to appropriate readyQueue
-int replyMessage(char * message, Process_PCB * process, int pidToReplyTo) {
+int replyMessage(char * message, int pidToReplyTo) {
+    Process_PCB * process = currentProcess;
     Process_Message * processMessage = (Process_Message *)malloc(sizeof(Process_Message));
     *processMessage = initializeProcessMessage(
         process->pid,
@@ -205,7 +212,7 @@ int replyMessage(char * message, Process_PCB * process, int pidToReplyTo) {
     // If sending to the init process, don't block
     if(pidToReplyTo == INIT_PROCESS_PID) {
         initProcess.message = processMessage;
-        return 0;
+        return SUCCESS;
     }
 
     // Search for a process awaiting a reply in the replyQ
@@ -219,8 +226,8 @@ int replyMessage(char * message, Process_PCB * process, int pidToReplyTo) {
     // If there is no process awaiting the replyQ, free the message.
     // This also handles the initProcess situation, as blocking is not
     // necessary for reply
-    free(processMessage);
-    return 0;
+    freeMessage(processMessage);
+    return SUCCESS;
 }
 
 // Procs the process to await a receive
@@ -231,19 +238,21 @@ int receiveMessage(Process_PCB * process) {
     Process_Message * receivedMessage = getMessageFromList(process->pid, messageQ, searchMessageReceive);
     if(receivedMessage != NULL) {
         process->message = receivedMessage;    
-        return 0;
+        return SUCCESS;
     }
     // No message to receive
     else {
         // If init, don't block
         if(process->pid == INIT_PROCESS_PID){
-            return 0;
+            return SUCCESS;
         }
         
         // If not init, block
         int result = prependToQueue(process, waitForReceiveQ); 
-        if(result != -1){
+        if(result != FAILURE){
             process->processState = blockedReceive;
+            // Change up current process
+            quantum();
         }  
         return result;
     }
@@ -251,3 +260,75 @@ int receiveMessage(Process_PCB * process) {
 }
 
 
+
+// Prints info on current process
+void printProcInfo(){
+    printf("Current process: \n");
+    printProcess(*currentProcess);
+}
+
+// Prints info of all the system
+void totalInfo(){
+    printProcInfo();
+    for(int i = 0; i < 3; i++) {
+        printf("Processes in %s queue: \n", priorityToString(i));
+        printProcessesInList(readyQs[i]);
+    }
+
+    printf("Processes awaiting receive:\n");
+    printProcessesInList(waitForReceiveQ);
+
+    printf("Processes awaiting reply:\n");
+    printProcessesInList(waitForReplyQ);
+
+    printf("Messages in message queue:\n");
+    printMessagesInList(messageQ);
+
+    printf("All Semaphore information");
+    printAllSemaphores();
+}
+
+void printProcessesInList(List * list) {
+    List_first(list);
+    int count = List_count(list);
+    for(int i = 0; i < count; i++) {
+        printProcess(*(Process_PCB *)List_curr(list));
+        List_next(list);
+    }
+}
+
+void printMessagesInList(List * list) {
+    List_first(list);
+    int count = List_count(list);
+    for(int i = 0; i < count; i++) {
+        printMessage(*(Process_Message *)List_curr(list));
+        List_next(list);
+    }
+}
+
+// --- Callers to functions in semaphores.h --- 
+int createSem(int id){
+    return createSemaphore(id, 1);
+}
+
+int semP(int id) {
+    // Calls P()
+    int result = semaphoreP(id, currentProcess);
+    // If the current process becomes blocked because of the P(),
+    // call quantum for preemption
+    // - WILL NOT WORK ON INIT_PROCESS
+    if(result == SUCCESS && currentProcess->processState == blockedSem){
+        quantum();
+    }
+    return result;
+}
+
+int semV(int id){
+    // Calls V()
+    Process_PCB * unblockedProcess = semaphoreV(id);
+    // If there's an unblocked process from V(), add to appropriate readyQueue
+    if(unblockedProcess != NULL){
+        prependToReadyQueue(unblockedProcess);
+    }
+    return SUCCESS;
+}

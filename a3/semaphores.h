@@ -33,7 +33,7 @@ Process_PCB * semaphoreV(int id);
 int semaphoreP(int id, Process_PCB * process);
 
 // Creating / Destroying semaphores
-void createSemaphore(int id, int sVal);
+int createSemaphore(int id, int sVal);
 void destroySemaphore(int id);
 void destroyAllSemaphores();
 
