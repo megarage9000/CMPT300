@@ -43,7 +43,7 @@ void initializeProgram() {
 }
 
 void terminateProgram(){
-    printf("Terminating program\n");
+    printf("TERMINATION: Terminating program\n");
     destroyMessageQueues();
     destroyQueues();
     destroyAllSemaphores();
@@ -87,28 +87,39 @@ bool isFinished(){
 // Create a process, returns -1 on failure
 int createProcess(priority processPriority) {
     if(processPriority != low && processPriority != medium && processPriority != high){
+        printf("- CREATE: Given priority is invalid\n");
         return FAILURE;
     }
     Process_PCB * process = (Process_PCB*)malloc(sizeof(Process_PCB));
     *process = initializeProcess(getAvailablePid(), processPriority, ready);
-    return prependToReadyQueue(process);
+    int result = prependToReadyQueue(process);
+    if(result == SUCCESS) {
+        printf("- CREATE: Successfully created process %d of priority %s\n", process->pid, priorityToString(process->processPriority));
+    }
+    return result; 
 }
 
 // Forks a process, returns -1 on failure 
 int forkProcess() {
     Process_PCB * process = currentProcess;
     if(process->pid == INIT_PROCESS_PID){
+        printf("- FORK: Attempted to fork INIT process\n");
         return FAILURE;
     }
     Process_PCB * forkedProcess = (Process_PCB *)malloc(sizeof(Process_PCB));
     *forkedProcess = initializeProcess(getAvailablePid(), process->processPriority, process->processState);
     forkedProcess->message = process->message;
     forkedProcess->processState = ready;
-    return prependToReadyQueue(forkedProcess);
+    int result = prependToReadyQueue(forkedProcess);
+    if(result == SUCCESS){
+        printf("- FORK: Forking process %d resulted in a new process %d\n", process->pid, forkedProcess->pid);
+    }
+    return result;
 }
 
 // Similar to kill, but does this on the current process only
 int exitProcess(){
+    printf("- EXIT: Calling KILL on behalf of EXIT on current process %d\n", currentProcess->pid);
     return killProcess(currentProcess->pid);
 }
 
@@ -118,29 +129,32 @@ int exitProcess(){
 int killProcess(int pid) {
     if(pid == currentProcess->pid){
         if((ifNoMoreProcess() && ifNoAvailProcesses()) && currentProcess->pid == INIT_PROCESS_PID) {
+            printf("- KILL: Program ready to terminate\n");
             terminateProgram();
             return SUCCESS;
         }
         // Free the process if the current process is not the init process
         else if(currentProcess->pid != INIT_PROCESS_PID){
-            printf("Freeing process of id %d!\n", pid);
+            printf("- KILL: Killing process of id %d\n", pid);
             freeProcess(currentProcess);
             currentProcess = NULL;
             quantum();
             return SUCCESS;
         }
         else {
+            printf("- KILL: Attempted to kill INIT process under unsuitable conditions\n");
             return FAILURE;
         }
     }
     Process_PCB * process = searchForProcess(pid);
     if(process != NULL) {
-        printf("Freeing process of id %d!\n", pid);
+        printf("- KILL: Killing process of id %d\n", pid);
         freeProcess(process);
         process = NULL;
         return SUCCESS;
     }
     else{
+        printf("- KILL: Unable to kill process of id %d\n", pid);
         return FAILURE;
     }
 }
@@ -153,6 +167,7 @@ void quantum() {
 
     // Fetch a new process to run
     // - Search from highest to lowest priority
+    
     if(List_count(readyQs[high]) > 0) {
         currentProcess = trimFromReadyQueue(high);
     }
@@ -167,12 +182,25 @@ void quantum() {
     }
     currentProcess->processState = running;
 
+    if(currentProcess == &initProcess) {
+        printf("- QUANTUM: Selecting the INIT process to execute\n");
+    }
+    else{
+        printf("- QUANTUM: Selecting process %d to execute\n", currentProcess->pid);
+    }
+
+    // Print process message of new process if it has one
+    if(currentProcess->message != NULL) {
+        printf("- CURRENT PROCESS: Current process has a message\n");
+        printProcess(*currentProcess);
+    }
     // Store the previous current process back to queue
     // only if it is not blocked and not init process
     if(previousCurrent != NULL && 
         isProcessBlocked(*previousCurrent) == false && 
         previousCurrent != &initProcess) {
-
+        
+        printf("- QUANTUM: Sending process %d to the %s queue\n", previousCurrent->pid, priorityToString(previousCurrent->processPriority));
         previousCurrent->processState = ready;
         prependToReadyQueue(previousCurrent);
     }
@@ -197,6 +225,7 @@ int sendMessage(char * message, int pidToSendTo) {
     // If sending to the init process, don't block
     if(pidToSendTo == INIT_PROCESS_PID) {
         initProcess.message = processMessage;
+        printf("- SEND: Sending message to INIT process, resulting in no blocking\n");
         return SUCCESS;
     }
 
@@ -206,13 +235,16 @@ int sendMessage(char * message, int pidToSendTo) {
     if(recievingProcess != NULL) {
         recievingProcess->message = processMessage;
         recievingProcess->processState = ready;
+        printf("- SEND: Process %d unblocked from receive queue due to SEND operation\n", recievingProcess->pid);
         return prependToReadyQueue(recievingProcess);
     }
     // If not, add message to messageQ
     else {
+        printf("- SEND: No process available to receive message\n");
         int resultAddMessage = List_prepend(messageQ, processMessage);
         // Check if adding the message resulted an error before blocking process
         if(resultAddMessage == FAILURE) {
+            printf("- SEND: Unable to add message to message queue\n");
             freeMessage(processMessage);
             return resultAddMessage;
         }
@@ -229,6 +261,7 @@ int sendMessage(char * message, int pidToSendTo) {
                 int resultAddToReply = prependToQueue(process, waitForReplyQ);
                 // If success, set process to blocked
                 if(resultAddToReply != FAILURE){
+                    printf("- SEND: Blocking process %d until receives a reply\n", process->pid);
                     process->processState = blockedSend;
                     // Change up current process
                     quantum();
@@ -256,6 +289,7 @@ int replyMessage(char * message, int pidToReplyTo) {
 
     // If sending to the init process, don't block
     if(pidToReplyTo == INIT_PROCESS_PID) {
+        printf("- REPLY: Replying message to INIT process\n");
         initProcess.message = processMessage;
         return SUCCESS;
     }
@@ -265,12 +299,14 @@ int replyMessage(char * message, int pidToReplyTo) {
     if(processAwaitingReply != NULL) {
         processAwaitingReply->message = processMessage;
         processAwaitingReply->processState = ready;
+        printf("- REPLY: Process %d unblocked from reply queue due to REPLY operation\n", processAwaitingReply->pid);
         return prependToReadyQueue(processAwaitingReply);
     }
 
     // If there is no process awaiting the replyQ, free the message.
     // This also handles the initProcess situation, as blocking is not
     // necessary for reply
+    printf("- REPLY: No process awaiting for reply on PID %d\n", pidToReplyTo);
     freeMessage(processMessage);
     return SUCCESS;
 }
@@ -283,18 +319,22 @@ int receiveMessage() {
     Process_Message * receivedMessage = getMessageFromList(process->pid, messageQ, searchMessageReceive);
     if(receivedMessage != NULL) {
         process->message = receivedMessage;    
+        printf("- RECEIVE: Process %d has message to receive from message queue\n", process->pid);
+        printProcess(*process);
         return SUCCESS;
     }
     // No message to receive
     else {
         // If init, don't block
         if(process->pid == INIT_PROCESS_PID){
+            printf("- RECEIVE: Calling receive on INIT process results in no blocking\n");
             return SUCCESS;
         }
         
         // If not init, block
         int result = prependToQueue(process, waitForReceiveQ); 
         if(result != FAILURE){
+            printf("- RECEIVE: Blocking process %d until it receives a message\n", process->pid);
             process->processState = blockedReceive;
             // Change up current process
             quantum();
@@ -379,7 +419,6 @@ int semP(int id) {
     // call quantum for preemption
     // - WILL NOT WORK ON INIT_PROCESS
     if(result == SUCCESS && currentProcess->processState == blockedSem){
-        printf("Calling quantum in semP()\n");
         quantum();
     }
     return result;

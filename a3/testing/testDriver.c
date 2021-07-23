@@ -7,22 +7,17 @@ void testSemaphores() {
     printf("%s\n", actionResultToString(createProcess(low)));
 
     quantum();
-    printf("Creating semaphores\n");
     for(int i = 0; i < NUM_SEMAPHORES; i++) {
         printf("%s\n", actionResultToString(createSem(i)));
     }
     totalInfo();
-    printf("Testing P() on semaphore %d:\n", id);
     for(int i = 0; i < 100; i++) {
         printf("%s\n", actionResultToString(semP(id)));
     }
-    printf("Processes after P() of semaphore %d:\n", id);
     totalInfo();
-    printf("Testing V() on semaphore %d:\n", id);
     for(int i = 0; i < 2; i++) {
         printf("%s\n", actionResultToString(semV(id)));
     }
-    printf("Processes after V() and P() of semaphore %d:\n", id);
     quantum();
     totalInfo();
     printf("%s\n", actionResultToString(exitProcess()));

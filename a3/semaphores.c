@@ -13,13 +13,14 @@ void initializeSemaphoreArray(){
 // semaphore
 // - Returns an unblocked process
 Process_PCB * semaphoreV(int id){
-    Semaphore * sem = semaphores[id];
+    Semaphore * sem = getSemaphore(id);
     if(sem != NULL){
         sem->s++;
+        printf("SEMAPHORE %d: S value after V() = %d\n", id, sem->s);
         if(sem->s > 0) {
             Process_PCB * process = dequeueFromSemaphore(id);
             if(process != NULL) {
-                printf("Unblocking process from semaphore %d!\n", id);
+                printf("SEMAPHORE %d: Unblocking process from semaphore %d\n", id, id);
                 process->processState = ready;
                 return process;
             } 
@@ -33,19 +34,21 @@ Process_PCB * semaphoreV(int id){
 // - Blocks the process calling the semaphore P() if s <= 0
 int semaphoreP(int id, Process_PCB * process){
     if(process == NULL){
+        printf("SEMAPHORE %d: Given process is NULL\n", id);
         return FAILURE;
     }
-    Semaphore * sem = semaphores[id];
+    Semaphore * sem = getSemaphore(id);
     if(sem != NULL) {
         if(sem->s > 0) {
             sem->s--;
+            printf("SEMAPHORE %d: S value after P() = %d\n", id, sem->s);
         }
         if(sem->s <= 0) {
             // Only add the process to blocking queue if it is not the initProcess
             if(process->pid != INIT_PROCESS_PID) {
                 int result = queueToSemaphore(id, process);
                 if(result == SUCCESS){
-                    printf("Blocking process with id %d!\n", process->pid);
+                    printf("SEMAPHORE %d: Blocking process with id %d\n", id, process->pid);
                     process->processState = blockedSem;
                 }
                 return result;
@@ -64,6 +67,7 @@ int semaphoreP(int id, Process_PCB * process){
 
 int createSemaphore(int id, int sVal) {
     if(id > NUM_SEMAPHORES - 1 || id < 0) {
+        printf("SEMAPHORE %d: Unable to create semaphore due to invalid id. Given id = %d (Must be from 0 - 4)\n", id, id);
         return FAILURE;
     }
     if(semaphores[id] == NULL) {
@@ -72,9 +76,11 @@ int createSemaphore(int id, int sVal) {
         if(sVal < 0 ) sVal = 0;
         semaphores[id]->s = sVal;
         semaphores[id]->blockedProccesses = List_create();
+        printf("SEMAPHORE %d: Created new semaphore with id %d\n", id, id);
         return SUCCESS;
     }
     else{
+        printf("SEMAPHORE %d: Unable to create semaphore since semaphore is already created. Given id = %d\n", id, id);
         return FAILURE;
     }
 }
@@ -85,6 +91,7 @@ void destroySemaphore(int id) {
         List_free(sem->blockedProccesses, freeProcess);
         free(sem);
         sem = NULL;
+        printf("SEMAPHORE %d: Destroyed semaphore with id %d\n", id, id);
     }
 }
 
@@ -93,6 +100,7 @@ Semaphore * getSemaphore(int id) {
         return semaphores[id];
     }
     else{
+        printf("SEMAPHORE %d: Unable to get semaphore due to invalid id. Given id = %d (Must be from 0 - 4)\n", id, id);
         return NULL;
     }
 }
@@ -110,7 +118,7 @@ int queueToSemaphore(int id, Process_PCB * process){
 void printSemaphore(int id) {
     Semaphore * sem = getSemaphore(id);
     if(sem != NULL) {
-        printf("Semaphore %d\n\ts = %d\n\tblocked processs : \n", sem->id, sem->s);
+        printf("Semaphore %d:\n\t%d\n\tblocked processs : \n", sem->id, sem->s);
         int numProcess = sem->blockedProccesses->count;
         List_first(sem->blockedProccesses);
         for(int i = 0; i < numProcess; i++){

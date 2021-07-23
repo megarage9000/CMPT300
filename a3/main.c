@@ -68,7 +68,6 @@ bool executeCommandLoop(char * userInput){
     // Quantum
     else if (compareString(userInput , QUANTUM)){
         quantum();
-        totalInfo();
     }
 
     // Send

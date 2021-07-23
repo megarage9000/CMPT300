@@ -63,7 +63,6 @@ static const Process_PCB emptyProcess = {
     .message = NULL
 };
 
-
 static Process_PCB initProcess = (Process_PCB){
     .pid = INIT_PROCESS_PID,
     .processPriority = none,
