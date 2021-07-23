@@ -128,7 +128,7 @@ int exitProcess(){
 // there are no more process left, terminate
 int killProcess(int pid) {
     if(pid == currentProcess->pid){
-        if((ifNoMoreProcess() && ifNoAvailProcesses()) && currentProcess->pid == INIT_PROCESS_PID) {
+        if(ifNoMoreProcess() && currentProcess->pid == INIT_PROCESS_PID) {
             printf("- KILL: Program ready to terminate\n");
             terminateProgram();
             return SUCCESS;
@@ -194,6 +194,7 @@ void quantum() {
         printf("- CURRENT PROCESS: Current process has a message\n");
         printProcess(*currentProcess);
     }
+    
     // Store the previous current process back to queue
     // only if it is not blocked and not init process
     if(previousCurrent != NULL && 
@@ -430,8 +431,9 @@ int semV(int id){
     // If there's an unblocked process from V(), add to appropriate readyQueue
     if(unblockedProcess != NULL){
         prependToReadyQueue(unblockedProcess);
+        return SUCCESS;
     }
-    return SUCCESS;
+    return FAILURE;
 }
 
 bool ifNoAvailProcesses() {

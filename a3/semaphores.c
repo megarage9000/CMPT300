@@ -26,6 +26,7 @@ Process_PCB * semaphoreV(int id){
             } 
         }
     }
+    printf("SEMAPHORE %d: The semaphore can not be found (Either the id is invalid or the semaphores has not been created yet)\n", id); 
     return NULL;
 }
 
@@ -61,6 +62,7 @@ int semaphoreP(int id, Process_PCB * process){
         }
         return SUCCESS;
     }
+    printf("SEMAPHORE %d: The semaphore can not be found (Either the id is invalid or the semaphores has not been created yet)\n", id);
     // return failure since the id of semaphore is not defined
     return FAILURE;
 }
@@ -107,12 +109,18 @@ Semaphore * getSemaphore(int id) {
 
 Process_PCB * dequeueFromSemaphore(int id) {
     Semaphore * sem = getSemaphore(id);
-    return List_trim(sem->blockedProccesses);
+    if(sem != NULL){
+        return trimFromQueue(sem->blockedProccesses);
+    }
+    return NULL;
 }
 
 int queueToSemaphore(int id, Process_PCB * process){
     Semaphore * sem = getSemaphore(id);
-    return List_prepend(sem->blockedProccesses, process);
+    if(sem != NULL){
+        return prependToQueue(process, sem->blockedProccesses);
+    }
+    return FAILURE;
 }
 
 void printSemaphore(int id) {
