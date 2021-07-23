@@ -92,6 +92,36 @@ void testSendReceiveReply() {
     killProcess(INIT_PROCESS_PID);
 }
 
+void testAllBlockedProcesses() {
+    initializeProgram();
+
+    for(int i = 0; i < 10; i++) {
+        createProcess(high);
+    }
+    quantum();
+    totalInfo();
+
+    // have the first 5 block by receive
+    for(int i = 0; i < 5; i++){
+        receiveMessage();
+    }
+
+    totalInfo();
+
+    // have the next 10 block by a semaphore
+    createSem(0);
+    for(int i = 0; i < 10; i++){
+        semP(0);
+    }
+
+    totalInfo();
+
+    // at this point, we are expecting the init process to be running, we can
+    // call kill()
+    killProcess(INIT_PROCESS_PID);
+}
+
+
 int main() {
-    testSendReceiveReply();
+    testAllBlockedProcesses();
 }

@@ -12,7 +12,6 @@ static List * messageQ;
 
 static Process_PCB * currentProcess;
 
-
 // --- Process methods --- // 
 void initializeProgram();
 void terminateProgram();
@@ -55,4 +54,5 @@ int semP(int id);
 
 int semV(int id);
 
+bool ifNoAvailProcesses();
 #endif

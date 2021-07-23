@@ -97,7 +97,7 @@ int forkProcess() {
 // - If the current process happens to be the init_process and
 // there are no more process left, terminate
 int killProcess(int pid) {
-    if(ifNoMoreProcess() && pid == INIT_PROCESS_PID) {
+    if((ifNoMoreProcess() || ifNoAvailProcesses())&& pid == INIT_PROCESS_PID) {
         terminateProgram();
     }
     else if(pid == currentProcess->pid){
@@ -308,15 +308,6 @@ void totalInfo(){
         printProcessesInList(readyQs[i]);
     }
     
-    if(waitForReceiveQ->head == NULL) {
-        printf("ReceiveQ has head nullptr\n");
-    }
-    if(waitForReceiveQ->tail == NULL) {
-        printf("ReceiveQ has tail nullptr\n");
-    }
-    if(waitForReceiveQ->current == NULL) {
-        printf("ReceiveQ has current nullptr\n");
-    } 
     printf("Processes awaiting receive:\n");
     printProcessesInList(waitForReceiveQ);
 
@@ -359,4 +350,12 @@ int semV(int id){
         prependToReadyQueue(unblockedProcess);
     }
     return SUCCESS;
+}
+
+bool ifNoAvailProcesses() {
+    return(
+        List_count(readyQs[low]) <= 0 &&
+        List_count(readyQs[medium]) <= 0 &&
+        List_count(readyQs[high]) <= 0
+    );
 }
