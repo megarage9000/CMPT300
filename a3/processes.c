@@ -106,8 +106,6 @@ bool ifEqualProcesses(Process_PCB processA, Process_PCB processB) {
 
 
 void freeProcess(void * process) {
-    void* message = ((Process_PCB*)process)->message;
-    freeMessage(message);
     free(process);
     process = NULL;
 }

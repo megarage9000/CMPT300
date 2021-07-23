@@ -49,26 +49,20 @@ bool executeCommandLoop(char * userInput){
 
     // Kill
     else if (compareString(userInput , KILL)){
-        char newInput[MAX_MESSAGE_LENGTH];
-        int currentPid = getCurrentProcessPID();
+        char newInput[MAX_MESSAGE_LENGTH];;
         printf("Enter PID of process to kill: \n");
         getUserInput(newInput, MAX_MESSAGE_LENGTH);
         int pid = getStringToInt(newInput);
         int result = killProcess(pid);
         printf("%s\n", actionResultToString(result));
-        if(result == SUCCESS && currentPid == INIT_PROCESS_PID){
-            return true;
-        }
+        return isFinished();
     }
 
     // Exit
     else if (compareString(userInput , EXIT)){
-        int currentPid = getCurrentProcessPID();
         int result = exitProcess();
         printf("%s\n", actionResultToString(result));
-        if(result == SUCCESS && currentPid == INIT_PROCESS_PID){
-            return true;
-        }
+        return isFinished();
     }
 
     // Quantum

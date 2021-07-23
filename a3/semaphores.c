@@ -33,7 +33,7 @@ Process_PCB * semaphoreV(int id){
 // - Blocks the process calling the semaphore P() if s <= 0
 int semaphoreP(int id, Process_PCB * process){
     if(process == NULL){
-        return 0;
+        return FAILURE;
     }
     Semaphore * sem = semaphores[id];
     if(sem != NULL) {
@@ -62,7 +62,7 @@ int semaphoreP(int id, Process_PCB * process){
 }
 
 int createSemaphore(int id, int sVal) {
-    if(id > NUM_SEMAPHORES - 1 && id < 0) {
+    if(id > NUM_SEMAPHORES - 1 || id < 0) {
         return FAILURE;
     }
     if(semaphores[id] == NULL) {

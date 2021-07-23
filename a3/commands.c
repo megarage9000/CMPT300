@@ -72,8 +72,8 @@ Process_PCB * trimFromReadyQueue(priority processPriority){
     }
 }
 
-int getCurrentProcessPID() {
-    return currentProcess->pid;
+bool isFinished(){
+    return (finished == true);
 }
 
 // Simulation methods
@@ -119,6 +119,7 @@ int killProcess(int pid) {
         else if(currentProcess->pid != INIT_PROCESS_PID){
             printf("Freeing process of id %d!\n", pid);
             freeProcess(currentProcess);
+            currentProcess = NULL;
             quantum();
             return SUCCESS;
         }
@@ -130,6 +131,7 @@ int killProcess(int pid) {
     if(process != NULL) {
         printf("Freeing process of id %d!\n", pid);
         freeProcess(process);
+        process = NULL;
         return SUCCESS;
     }
     else{
@@ -139,12 +141,9 @@ int killProcess(int pid) {
 
 // Switches the current process up with ones from readyQs
 void quantum() {
-    // Remove the process and put it back to appropriate queue
-    // only if it is not blocked and not init process
-    if(isProcessBlocked(*currentProcess) == false && currentProcess != &initProcess) {
-        currentProcess->processState = ready;
-        prependToReadyQueue(currentProcess);
-    }
+
+    // Storing previous current process
+    Process_PCB * previousCurrent = currentProcess;
 
     // Fetch a new process to run
     // - Search from highest to lowest priority
@@ -162,6 +161,15 @@ void quantum() {
     }
     currentProcess->processState = running;
 
+    // Store the previous current process back to queue
+    // only if it is not blocked and not init process
+    if(previousCurrent != NULL && 
+        isProcessBlocked(*previousCurrent) == false && 
+        previousCurrent != &initProcess) {
+
+        previousCurrent->processState = ready;
+        prependToReadyQueue(previousCurrent);
+    }
 }
 
 // Sends a message to a process.
@@ -327,6 +335,7 @@ void totalInfo(){
     printf("Current process: \n");
     printf("---------------------- \n");
     printProcess(*currentProcess);
+    printf("---------------------- \n");
     for(int i = 0; i < 3; i++) {
         printf("Processes in %s queue: \n", priorityToString(i));
         printProcessesInList(readyQs[i]);

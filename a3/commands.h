@@ -17,7 +17,7 @@ static bool finished = false;
 void initializeProgram();
 void terminateProgram();
 
-int prependToReadyQueue(Process_PCB * process);
+bool isFinished();
 Process_PCB * trimFromReadyQueue(priority processPriority);
 
 int getCurrentProcessPID();
