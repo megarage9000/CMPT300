@@ -15,17 +15,20 @@ void testSemaphores() {
     for(int i = 0; i < 100; i++) {
         semP(id);
     }
-    printSemaphore(id);
     printf("Processes after P() of semaphore %d:\n", id);
     totalInfo();
     printf("Testing V() on semaphore %d:\n", id);
     for(int i = 0; i < 2; i++) {
         semV(id);
     }
-    printSemaphore(id);
     printf("Processes after V() and P() of semaphore %d:\n", id);
+    quantum();
     totalInfo();
-    terminateProgram();
+    exitProcess();
+    totalInfo();
+    exitProcess();
+    totalInfo();
+    exitProcess();
 }
 
 void testSendReceiveReply() {
@@ -121,7 +124,51 @@ void testAllBlockedProcesses() {
     killProcess(INIT_PROCESS_PID);
 }
 
+void testSendReceiveSimple(){
+    initializeProgram();
+
+    char * message = "RANDOM HELLO";
+
+    createProcess(low);
+    createProcess(low);
+    createProcess(low);
+    createProcess(high);
+    quantum();
+
+    totalInfo();
+
+    sendMessage(message, 0);
+    sendMessage(message, 1);
+    sendMessage(message, 10);
+    sendMessage(message, 131);
+    sendMessage(message, 31);
+    
+    totalInfo();
+
+    replyMessage(message, 0);
+    replyMessage(message, 1);
+
+    totalInfo();
+
+    quantum();
+
+    exitProcess();
+    exitProcess();
+
+    totalInfo();
+
+    killProcess(2);
+    killProcess(3);
+    //killProcess(-1);
+
+    totalInfo();
+
+    exitProcess();
+
+    totalInfo();
+}
+
 
 int main() {
-    testAllBlockedProcesses();
+    testSendReceiveSimple();
 }

@@ -111,7 +111,7 @@ int exitProcess(){
 // there are no more process left, terminate
 int killProcess(int pid) {
     if(pid == currentProcess->pid){
-        if((ifNoMoreProcess()) && currentProcess->pid == INIT_PROCESS_PID) {
+        if((ifNoMoreProcess() && ifNoAvailProcesses()) && currentProcess->pid == INIT_PROCESS_PID) {
             terminateProgram();
             return SUCCESS;
         }
@@ -205,21 +205,20 @@ int sendMessage(char * message, int pidToSendTo) {
     // If not, add message to messageQ
     else {
         int resultAddMessage = List_prepend(messageQ, processMessage);
-
-        // If the process is the init process, don't block,
-        if(process->pid == INIT_PROCESS_PID) {
+        // Check if adding the message resulted an error before blocking process
+        if(resultAddMessage == FAILURE) {
+            freeMessage(processMessage);
             return resultAddMessage;
         }
         else {
-            // If the process is not the init process, block and return the results of 
-            // adding the queues
-
-            // Check if adding the message resulted an error before blocking process
-            if(resultAddMessage == FAILURE) {
-                freeMessage(processMessage);
+            // If the process is the init process, don't block,
+            if(process->pid == INIT_PROCESS_PID) {
                 return resultAddMessage;
             }
             else {
+                // If the process is not the init process, block and return the results of 
+                // adding the queues
+
                 // Add the message to replyQ
                 int resultAddToReply = prependToQueue(process, waitForReplyQ);
                 // If success, set process to blocked
@@ -228,7 +227,7 @@ int sendMessage(char * message, int pidToSendTo) {
                     // Change up current process
                     quantum();
                 } 
-                return resultAddToReply;
+                return resultAddToReply;   
             }
         }
     }

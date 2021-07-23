@@ -74,17 +74,28 @@ bool executeCommandLoop(char * userInput){
     // Send
     else if (compareString(userInput , SEND)){
         char newInput[MAX_MESSAGE_LENGTH];
-        printf("Enter message to send (Will be truncated to 40 characters): \n");
-        getUserInput(newInput, MAX_MESSAGE_LENGTH);
+
         printf("Enter PID of process to send to: \n");
         getUserInput(newInput, MAX_MESSAGE_LENGTH);
         int pid = getStringToInt(newInput);
+        printf("Enter message to send (Will be truncated to 40 characters): \n");
+        getUserInput(newInput, MAX_MESSAGE_LENGTH);
         printf("%s\n", actionResultToString(sendMessage(newInput, pid)));
     }
 
     // Receive
     else if (compareString(userInput , RECEIVE)){
         printf("%s\n", actionResultToString(receiveMessage()));
+    }
+
+    else if(compareString(userInput, REPLY)) {
+        char newInput[MAX_MESSAGE_LENGTH];
+        printf("Enter PID of process to reply to: \n");
+        getUserInput(newInput, MAX_MESSAGE_LENGTH);
+        int pid = getStringToInt(newInput);
+        printf("Enter message to reply (Will be truncated to 40 characters): \n");
+        getUserInput(newInput, MAX_MESSAGE_LENGTH);
+        printf("%s\n", actionResultToString(replyMessage(newInput, pid)));
     }
 
     // New Semaphore

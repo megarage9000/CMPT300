@@ -106,13 +106,16 @@ bool ifEqualProcesses(Process_PCB processA, Process_PCB processB) {
 
 
 void freeProcess(void * process) {
-    free(process);
-    process = NULL;
+    Process_PCB * processToFree = ((Process_PCB *)process);
+    Process_Message * processMessage = processToFree->message;
+    if(processMessage != NULL){
+        freeMessage(processMessage);
+    }
+    free(processToFree);
 }
 
 void freeMessage(void * message){
-    free(message);
-    message = NULL;
+    free(((Process_Message *)message));
 }
 
 // --- For List_Search ---- //
