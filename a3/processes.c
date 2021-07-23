@@ -1,5 +1,6 @@
 #include "processes.h"
 
+// Simply converts the action result to readable string
 const char * actionResultToString(int result) {
     switch(result) {
         case FAILURE:
@@ -20,6 +21,9 @@ Process_PCB initializeProcess(int pid, priority priority, state state) {
         NULL
     };
 }
+
+// Creates a message
+// - returns empty message if the message is of invalid length
 Process_Message initializeProcessMessage(int sendingPid, int receivingPid, char * message, int messageSize, message_state msg_state){
     Process_Message processMessage;
     processMessage.sendingPid = sendingPid;
@@ -35,7 +39,6 @@ Process_Message initializeProcessMessage(int sendingPid, int receivingPid, char 
 }
 
 // Private functions to convert priority / state to strings
-
 const char * stateToString(state givenState) {
     switch(givenState) {
         case blockedReceive:
@@ -94,7 +97,7 @@ void printMessage(Process_Message message) {
         message.sendingPid, message.receivingPid, message.receivedMessage, messageStateToString(message.state));
 }
 
-
+// Comparing processes in the struct level
 bool ifEqualProcesses(Process_PCB processA, Process_PCB processB) {
     bool matchingPid = (processA.pid == processB.pid);
     bool matchingPriority = (processA.pid == processB.pid);
@@ -103,7 +106,7 @@ bool ifEqualProcesses(Process_PCB processA, Process_PCB processB) {
     return (matchingPid && matchingPriority && matchingState && matchingMessage);
 }
 
-
+// Free functions for process and message
 void freeProcess(void * process) {
     Process_PCB * processToFree = ((Process_PCB *)process);
     Process_Message * processMessage = processToFree->message;
@@ -258,7 +261,7 @@ bool ifNoMoreProcess(){
     return true;
 }
 
-
+// Checking if process is blocked
 bool isProcessBlocked(Process_PCB process){
     return (
         process.processState == blockedReceive ||

@@ -48,7 +48,7 @@ struct Process_PCB_s {
     Process_Message * message;  
 };
 
-// Empty Message and Process, may delete in a future iteration
+// Empty Message and Process
 static const Process_Message emptyMessage = {
     .sendingPid = -2,
     .receivingPid = -2,
@@ -63,6 +63,7 @@ static const Process_PCB emptyProcess = {
     .message = NULL
 };
 
+// Create the init process
 static Process_PCB initProcess = (Process_PCB){
     .pid = INIT_PROCESS_PID,
     .processPriority = none,
@@ -75,12 +76,13 @@ Process_PCB initializeProcess(int pid, priority priority, state state);
 Process_Message initializeProcessMessage(int sendingPid, int receivingPid, char * message, int messageSize,  message_state msg_state);
 
 // Printing Process and Message information
-// - Consider using Ncurses?
 void printProcess(Process_PCB process);
 void printMessage(Process_Message message);
 
 // Comparing processes in the struct level
 bool ifEqualProcesses(Process_PCB processA, Process_PCB processB);
+
+// Free functions for process and message
 void freeProcess(void * process);
 void freeMessage(void * message);
 
@@ -114,9 +116,8 @@ void returnAvailablePid(int pid);
 
 // Getting associated queues and updating queues
 List * getQueueOfProcess(int pid);
+// Updates the associated queue of process
 void updateProcessTracker(int pid, List * queue);
-
-// Retrieving / Adding processes to queues
 
 // Adds process to a queue, also executes updateProcessTracker
 // for associate queue

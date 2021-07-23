@@ -136,8 +136,14 @@ int killProcess(int pid) {
         // Free the process if the current process is not the init process
         else if(currentProcess->pid != INIT_PROCESS_PID){
             printf("- KILL: Killing process of id %d\n", pid);
+            // Recycle pid
+            returnAvailablePid(pid);
+
+            // Free process
             freeProcess(currentProcess);
             currentProcess = NULL;
+
+            // Since we killed the current process, quantum
             quantum();
             return SUCCESS;
         }
@@ -149,6 +155,10 @@ int killProcess(int pid) {
     Process_PCB * process = searchForProcess(pid);
     if(process != NULL) {
         printf("- KILL: Killing process of id %d\n", pid);
+        // Recycle pid
+        returnAvailablePid(pid);
+
+        // Free process
         freeProcess(process);
         process = NULL;
         return SUCCESS;
@@ -241,7 +251,7 @@ int sendMessage(char * message, int pidToSendTo) {
     }
     // If not, add message to messageQ
     else {
-        printf("- SEND: No process available to receive message\n");
+        printf("- SEND: No process available to receive message, attempting to add message to message queue\n");
         int resultAddMessage = List_prepend(messageQ, processMessage);
         // Check if adding the message resulted an error before blocking process
         if(resultAddMessage == FAILURE) {
@@ -250,6 +260,7 @@ int sendMessage(char * message, int pidToSendTo) {
             return resultAddMessage;
         }
         else {
+            printf("- SEND: Message added to message queue\n");
             // If the process is the init process, don't block,
             if(process->pid == INIT_PROCESS_PID) {
                 return resultAddMessage;

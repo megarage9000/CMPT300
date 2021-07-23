@@ -134,9 +134,44 @@ void testSendReceiveSimple(){
     totalInfo();
 }
 
+void testExhaustion(){
+    initializeProgram();
 
+    // Should work
+    for(int i = 0; i < LIST_MAX_NUM_NODES; i++) {
+        createProcess(high);
+    }
+
+    totalInfo(); 
+
+    // Should not work
+    for(int i = 0;  i < 10; i++) {
+        sendMessage("Should not work", -123);
+    }
+
+    totalInfo();
+
+    // Should work
+    for(int i = 0; i < LIST_MAX_NUM_NODES; i++){
+        killProcess(i);
+    }
+
+    totalInfo();
+
+    // Should work
+    for(int i = 0; i < LIST_MAX_NUM_NODES; i++){
+        sendMessage("SHould work", -12);
+    }
+
+    totalInfo();
+
+    exitProcess();
+
+
+}
 int main() {
     //testSendReceiveSimple();
-    testSemaphores();
+    //testSemaphores();
     //testSendReceiveReply();
+    testExhaustion();
 }
