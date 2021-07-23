@@ -12,7 +12,6 @@ const char * actionResultToString(int result) {
 }
 
 // --- Process PCB and Messages --- //
-
 Process_PCB initializeProcess(int pid, priority priority, state state) {
     return (Process_PCB){
         pid,

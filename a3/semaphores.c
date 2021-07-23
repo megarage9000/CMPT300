@@ -56,6 +56,7 @@ int semaphoreP(int id, Process_PCB * process){
                 return SUCCESS;
             }
         }
+        return SUCCESS;
     }
     // return failure since the id of semaphore is not defined
     return FAILURE;

@@ -3,40 +3,41 @@
 void testSemaphores() {
     int id = 0;
     initializeProgram();
-    createProcess(low);
-    createProcess(low);
+    printf("%s\n", actionResultToString(createProcess(low)));
+    printf("%s\n", actionResultToString(createProcess(low)));
+
     quantum();
     printf("Creating semaphores\n");
     for(int i = 0; i < NUM_SEMAPHORES; i++) {
-        createSem(i);
+        printf("%s\n", actionResultToString(createSem(i)));
     }
     totalInfo();
     printf("Testing P() on semaphore %d:\n", id);
     for(int i = 0; i < 100; i++) {
-        semP(id);
+        printf("%s\n", actionResultToString(semP(id)));
     }
     printf("Processes after P() of semaphore %d:\n", id);
     totalInfo();
     printf("Testing V() on semaphore %d:\n", id);
     for(int i = 0; i < 2; i++) {
-        semV(id);
+        printf("%s\n", actionResultToString(semV(id)));
     }
     printf("Processes after V() and P() of semaphore %d:\n", id);
     quantum();
     totalInfo();
-    exitProcess();
+    printf("%s\n", actionResultToString(exitProcess()));
     totalInfo();
-    exitProcess();
+    printf("%s\n", actionResultToString(exitProcess()));
     totalInfo();
-    exitProcess();
+    printf("%s\n", actionResultToString(exitProcess()));
 }
 
 void testSendReceiveReply() {
     initializeProgram();
     char testMessage[] = "I am clearly longer than 40 characters, let's see how this messsage goes?";
-    createProcess(low);
-    createProcess(medium);
-    createProcess(high);
+    printf("%s\n", actionResultToString(createProcess(low)));
+    printf("%s\n", actionResultToString(createProcess(medium)));
+    printf("%s\n", actionResultToString(createProcess(high)));
     quantum();
 
     totalInfo();
@@ -44,40 +45,40 @@ void testSendReceiveReply() {
     printf("----- TESTING SEND TO NON-EXISTENT MESSAGES -----\n");
     // Sending to non-existent process
     printProcInfo();
-    sendMessage(testMessage, 3);
+    printf("%s\n", actionResultToString(sendMessage(testMessage, 3)));
     printProcInfo();
-    sendMessage(testMessage, 3);
+    printf("%s\n", actionResultToString(sendMessage(testMessage, 3)));
 
     totalInfo();
     printf("----- TESTING RECEIVE FOR PROCESS THAT HAS NO MESSAGES AWAITING IT -----\n");
     // Receiving for a process that has no message for it
     printProcInfo();
-    receiveMessage();
+    printf("%s\n", actionResultToString(receiveMessage()));
 
     totalInfo();
     printf("----- TESTING RECEIVE FOR PROCESS THAT HAS NO MESSAGES AWAITING IT (INIT)-----\n");
     
-    receiveMessage();
+    printf("%s\n", actionResultToString(receiveMessage()));
     printProcInfo();
 
     totalInfo();
     printf("----- TESTING UNBLOCKING SENDERS -----\n");
     // Unblocking the senders
-    replyMessage(testMessage, 0);
-    replyMessage(testMessage, 1);
+    printf("%s\n", actionResultToString(replyMessage(testMessage, 0)));
+    printf("%s\n", actionResultToString(replyMessage(testMessage, 1)));
     totalInfo();
 
     quantum();
     printf("----- CREATING A NEW PROCESS TO HANDLE SEND TO BLOCKED RECEIVER -----\n");
     // Creating a new process to handle the messages sent to 
     // non-existent process
-    createProcess(high);
-    receiveMessage();
-    receiveMessage();
+    printf("%s\n", actionResultToString(createProcess(high)));
+    printf("%s\n", actionResultToString(receiveMessage()));
+    printf("%s\n", actionResultToString(receiveMessage()));
     totalInfo();
 
     // send message to process awaiting receive
-    sendMessage(testMessage, 2);
+    printf("%s\n", actionResultToString(sendMessage(testMessage, 2)));
     totalInfo();
 
     quantum();
@@ -85,43 +86,13 @@ void testSendReceiveReply() {
     totalInfo();
     printf("----- KILLING PROCESSES -----\n");
     // kill all processes
-    killProcess(0);
-    killProcess(1);
-    killProcess(2);
-    killProcess(3);
-
-
-    totalInfo();
-    killProcess(INIT_PROCESS_PID);
-}
-
-void testAllBlockedProcesses() {
-    initializeProgram();
-
-    for(int i = 0; i < 10; i++) {
-        createProcess(high);
-    }
-    quantum();
-    totalInfo();
-
-    // have the first 5 block by receive
-    for(int i = 0; i < 5; i++){
-        receiveMessage();
-    }
+    printf("%s\n", actionResultToString(killProcess(0)));
+    printf("%s\n", actionResultToString(killProcess(1)));
+    printf("%s\n", actionResultToString(killProcess(2)));
+    printf("%s\n", actionResultToString(killProcess(3)));
 
     totalInfo();
-
-    // have the next 10 block by a semaphore
-    createSem(0);
-    for(int i = 0; i < 10; i++){
-        semP(0);
-    }
-
-    totalInfo();
-
-    // at this point, we are expecting the init process to be running, we can
-    // call kill()
-    killProcess(INIT_PROCESS_PID);
+    printf("%s\n", actionResultToString(killProcess(INIT_PROCESS_PID)));
 }
 
 void testSendReceiveSimple(){
@@ -137,38 +108,40 @@ void testSendReceiveSimple(){
 
     totalInfo();
 
-    sendMessage(message, 0);
-    sendMessage(message, 1);
-    sendMessage(message, 10);
-    sendMessage(message, 131);
-    sendMessage(message, 31);
+    printf("%s\n", actionResultToString(sendMessage(message, 0)));
+    printf("%s\n", actionResultToString(sendMessage(message, 1)));
+    printf("%s\n", actionResultToString(sendMessage(message, 10)));
+    printf("%s\n", actionResultToString(sendMessage(message, 131)));
+    printf("%s\n", actionResultToString(sendMessage(message, 31)));
     
     totalInfo();
 
-    replyMessage(message, 0);
-    replyMessage(message, 1);
+    printf("%s\n", actionResultToString(replyMessage(message, 0)));
+    printf("%s\n", actionResultToString(replyMessage(message, 1)));
 
     totalInfo();
 
     quantum();
 
-    exitProcess();
-    exitProcess();
+    printf("%s\n", actionResultToString(exitProcess()));
+    printf("%s\n", actionResultToString(exitProcess()));
 
     totalInfo();
 
-    killProcess(2);
-    killProcess(3);
+    printf("%s\n", actionResultToString(killProcess(2)));
+    printf("%s\n", actionResultToString(killProcess(3)));
     //killProcess(-1);
 
     totalInfo();
 
-    exitProcess();
+    printf("%s\n", actionResultToString(exitProcess()));
 
     totalInfo();
 }
 
 
 int main() {
-    testSendReceiveSimple();
+    //testSendReceiveSimple();
+    testSemaphores();
+    //testSendReceiveReply();
 }

@@ -50,6 +50,12 @@ void terminateProgram(){
     for(int i = 0; i < LIST_MAX_NUM_NODES; i++) {
         updateProcessTracker(i, NULL);
     }
+
+    // Clear process message if there happens to be one
+    Process_Message * message = initProcess.message;
+    if(message != NULL) {
+        freeMessage(message);
+    }
     finished = true;
 }
 
