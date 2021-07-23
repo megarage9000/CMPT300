@@ -2,46 +2,146 @@
 #include "commands.h"
 
 
+
+char * CREATE = "C";
+char * FORK = "F";
+char * KILL = "K";
+char * EXIT = "E";
+char * QUANTUM = "Q";
+char * SEND = "S";
+char * RECEIVE = "R";
+char * REPLY = "Y";
+char * NEW_SEM = "N";
+char * SEM_P = "P";
+char * SEM_V = "V";
+char * PROC_I = "I";
+char * TOTAL_I = "T";
+
 void getUserInput(char * buffer, int bufferSize) {
     fgets(buffer, bufferSize, stdin);
-    buffer[bufferSize] = '\0';
+    buffer[strcspn(buffer, "\n")] = 0;
 }
 
-void testSemaphores() {
-    int id = 0;
-    Process_PCB processes[2];
-    processes[0] = initializeProcess(0, low, stateless);
-    processes[1] = initializeProcess(1, low, stateless);
-    initializeSemaphoreArray();
-    printf("Creating semaphores\n");
-    for(int i = 0; i < NUM_SEMAPHORES; i++) {
-        createSemaphore(i, 1);
+bool compareString(char * stringA, char * stringB) {
+    return(strcmp(stringA, stringB) == 0);
+}
+
+int getStringToInt(char * stringInput) {
+    return strtol(stringInput, NULL, 10);
+}
+
+bool executeCommandLoop(char * userInput){
+
+    printf("Entered command: %s\n", userInput);
+    // Create
+    if(compareString(userInput, CREATE)){
+        char newInput[MAX_MESSAGE_LENGTH];
+        printf("Enter priority of new process: \n");
+        getUserInput(newInput, MAX_MESSAGE_LENGTH);
+        int priority = getStringToInt(newInput);
+        printf("%s\n", actionResultToString(createProcess(priority)));
     }
-    printf("Printing semaphores\n");
-    printAllSemaphores();
-    printf("Processes before V() and P() of semaphore %d:\n", id);
-    printProcess(processes[0]);
-    printProcess(processes[1]);
-    printf("Testing P() on semaphore %d:\n", id);
-    for(int i = 0; i < 100; i++) {
-        semaphoreP(id, &processes[0]);
+
+    // Fork
+    else if (compareString(userInput , FORK)){
+        printf("%s\n", actionResultToString(forkProcess()));
     }
-    printSemaphore(id);
-    printf("Processes after P() of semaphore %d:\n", id);
-    printProcess(processes[0]);
-    printProcess(processes[1]);
-    printf("Testing V() on semaphore %d:\n", id);
-    for(int i = 0; i < 2; i++) {
-        semaphoreV(id);
+
+    // Kill
+    else if (compareString(userInput , KILL)){
+        char newInput[MAX_MESSAGE_LENGTH];
+        int currentPid = getCurrentProcessPID();
+        printf("Enter PID of process to kill: \n");
+        getUserInput(newInput, MAX_MESSAGE_LENGTH);
+        int pid = getStringToInt(newInput);
+        int result = killProcess(pid);
+        printf("%s\n", actionResultToString(result));
+        if(result == SUCCESS && currentPid == INIT_PROCESS_PID){
+            return true;
+        }
     }
-    printSemaphore(id);
-    printf("Processes after V() and P() of semaphore %d:\n", id);
-    printProcess(processes[0]);
-    printProcess(processes[1]);
-    destroyAllSemaphores();
+
+    // Exit
+    else if (compareString(userInput , EXIT)){
+        int currentPid = getCurrentProcessPID();
+        int result = exitProcess();
+        printf("%s\n", actionResultToString(result));
+        if(result == SUCCESS && currentPid == INIT_PROCESS_PID){
+            return true;
+        }
+    }
+
+    // Quantum
+    else if (compareString(userInput , QUANTUM)){
+        quantum();
+        totalInfo();
+    }
+
+    // Send
+    else if (compareString(userInput , SEND)){
+        char newInput[MAX_MESSAGE_LENGTH];
+        printf("Enter message to send (Will be truncated to 40 characters): \n");
+        getUserInput(newInput, MAX_MESSAGE_LENGTH);
+        printf("Enter PID of process to send to: \n");
+        getUserInput(newInput, MAX_MESSAGE_LENGTH);
+        int pid = getStringToInt(newInput);
+        printf("%s\n", actionResultToString(sendMessage(newInput, pid)));
+    }
+
+    // Receive
+    else if (compareString(userInput , RECEIVE)){
+        printf("%s\n", actionResultToString(receiveMessage()));
+    }
+
+    // New Semaphore
+    else if (compareString(userInput , NEW_SEM)){
+        char newInput[MAX_MESSAGE_LENGTH];
+        printf("Enter ID of new semaphore: \n");
+        getUserInput(newInput, MAX_MESSAGE_LENGTH);
+        int id = getStringToInt(newInput);
+        printf("%s\n", actionResultToString(createSem(id)));
+    }
+
+    // Semaphore P
+    else if (compareString(userInput , SEM_P)){
+        char newInput[MAX_MESSAGE_LENGTH];
+        printf("Enter ID of semaphore to perform P(): \n");
+        getUserInput(newInput, MAX_MESSAGE_LENGTH);
+        int id = getStringToInt(newInput);
+        printf("%s\n", actionResultToString(semP(id)));
+    }
+
+    // Semaphore V
+    else if (compareString(userInput , SEM_V)){
+        char newInput[MAX_MESSAGE_LENGTH];
+        printf("Enter ID of semaphore to perform V(): \n");
+        getUserInput(newInput, MAX_MESSAGE_LENGTH);
+        int id = getStringToInt(newInput);
+        printf("%s\n", actionResultToString(semV(id)));
+    }
+
+    // Process Info
+    else if (compareString(userInput , PROC_I)){
+        printProcInfo();
+    }
+
+    // Total System Info
+    else if (compareString(userInput , TOTAL_I)){
+        totalInfo();
+    }
+
+    return false;
 }
 
 int main() {
-    testSemaphores();
+    initializeProgram();
+    while(true){
+        char input[MAX_MESSAGE_LENGTH];
+        printf("Command: \n");
+        getUserInput(input, MAX_MESSAGE_LENGTH);
+        if(executeCommandLoop(input)){
+            break;
+        }
+    }
 }
 

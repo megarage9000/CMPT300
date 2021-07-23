@@ -43,12 +43,14 @@ void initializeProgram() {
 }
 
 void terminateProgram(){
+    printf("Terminating program\n");
     destroyMessageQueues();
     destroyQueues();
     destroyAllSemaphores();
     for(int i = 0; i < LIST_MAX_NUM_NODES; i++) {
         updateProcessTracker(i, NULL);
     }
+    finished = true;
 }
 
 // Simple abstractions for ready queues
@@ -70,11 +72,17 @@ Process_PCB * trimFromReadyQueue(priority processPriority){
     }
 }
 
+int getCurrentProcessPID() {
+    return currentProcess->pid;
+}
 
 // Simulation methods
 
 // Create a process, returns -1 on failure
 int createProcess(priority processPriority) {
+    if(processPriority != low && processPriority != medium && processPriority != high){
+        return FAILURE;
+    }
     Process_PCB * process = (Process_PCB*)malloc(sizeof(Process_PCB));
     *process = initializeProcess(getAvailablePid(), processPriority, ready);
     return prependToReadyQueue(process);
@@ -93,15 +101,30 @@ int forkProcess() {
     return prependToReadyQueue(forkedProcess);
 }
 
+// Similar to kill, but does this on the current process only
+int exitProcess(){
+    return killProcess(currentProcess->pid);
+}
+
 // Remove process from the system entirely
 // - If the current process happens to be the init_process and
 // there are no more process left, terminate
 int killProcess(int pid) {
-    if((ifNoMoreProcess() || ifNoAvailProcesses())&& pid == INIT_PROCESS_PID) {
-        terminateProgram();
-    }
-    else if(pid == currentProcess->pid){
-        quantum();
+    if(pid == currentProcess->pid){
+        if((ifNoMoreProcess()) && currentProcess->pid == INIT_PROCESS_PID) {
+            terminateProgram();
+            return SUCCESS;
+        }
+        // Free the process if the current process is not the init process
+        else if(currentProcess->pid != INIT_PROCESS_PID){
+            printf("Freeing process of id %d!\n", pid);
+            freeProcess(currentProcess);
+            quantum();
+            return SUCCESS;
+        }
+        else {
+            return FAILURE;
+        }
     }
     Process_PCB * process = searchForProcess(pid);
     if(process != NULL) {
@@ -114,10 +137,12 @@ int killProcess(int pid) {
     }
 }
 
+// Switches the current process up with ones from readyQs
 void quantum() {
     // Remove the process and put it back to appropriate queue
     // only if it is not blocked and not init process
     if(isProcessBlocked(*currentProcess) == false && currentProcess != &initProcess) {
+        currentProcess->processState = ready;
         prependToReadyQueue(currentProcess);
     }
 
@@ -135,11 +160,9 @@ void quantum() {
     else {
         currentProcess = &initProcess;
     }
+    currentProcess->processState = running;
 
 }
-
-
-
 
 // Sends a message to a process.
 // - Blocks the sending process immediately if no process is awaiting
@@ -302,23 +325,29 @@ void printProcInfo(){
 void totalInfo(){
     printf("############### TOTAL INFO #################\n");
     printf("Current process: \n");
+    printf("---------------------- \n");
     printProcess(*currentProcess);
     for(int i = 0; i < 3; i++) {
         printf("Processes in %s queue: \n", priorityToString(i));
         printProcessesInList(readyQs[i]);
+        printf("---------------------- \n");
     }
     
     printf("Processes awaiting receive:\n");
     printProcessesInList(waitForReceiveQ);
+    printf("---------------------- \n");
 
     printf("Processes awaiting reply:\n");
     printProcessesInList(waitForReplyQ);
+    printf("---------------------- \n");
 
     printf("Messages in message queue:\n");
     printMessagesInList(messageQ);
+    printf("---------------------- \n");
 
     printf("All Semaphore information:\n");
     printAllSemaphores();
+    printf("---------------------- \n");
     printf("############### TOTAL INFO #################\n");
 }
 

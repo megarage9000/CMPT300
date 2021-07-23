@@ -13,11 +13,13 @@
 #define FAILURE -1
 #define SUCCESS 0
 
+const char * actionResultToString(int result);
+
 // --- Process PCB and Messages --- //
 
 // Priority values
 typedef enum priority_e priority;
-enum priority_e {low, medium, high, none};
+enum priority_e {high, medium, low, none};
 const char * priorityToString(priority givenPriority);
 
 // State values
@@ -90,8 +92,11 @@ bool searchProcess(void * process, void * comparison);
 Process_PCB * getProcessFromList(int pid, List * list);
 
 // For List_Search (Messages)
+// - For process messages awaiting receives / replies
 bool searchMessageReceive(void * message, void * receivingPid);
+// - For process messages that have the associated sending pid
 bool searchMessageSending(void * message, void * sendingPid);
+// - Get a message with a given message COMPARATOR_FN
 Process_Message * getMessageFromList(int pid, List * list, COMPARATOR_FN compare);
 
 // For tracking which queue a certain process is
@@ -103,7 +108,9 @@ static int availablePidIndex = 0;
 
 // - Pid management
 void initializePidTracking();
+// Gets available Pid for a new process
 int getAvailablePid();
+// Recycles Pid for new processes
 void returnAvailablePid(int pid);
 
 // Getting associated queues and updating queues
@@ -111,8 +118,17 @@ List * getQueueOfProcess(int pid);
 void updateProcessTracker(int pid, List * queue);
 
 // Retrieving / Adding processes to queues
+
+// Adds process to a queue, also executes updateProcessTracker
+// for associate queue
 int prependToQueue(Process_PCB * process, List * queue);
+
+// Removes process from a queue, also updates the associated
+// queue to NULL
 Process_PCB * trimFromQueue(List * queue);
+
+// Finds the process of given pid and removes it, also
+// updates process tracker to NULL
 Process_PCB * searchForProcess(int pid);
 
 // Checking if no processes exist

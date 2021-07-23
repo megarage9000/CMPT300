@@ -11,6 +11,7 @@ static List * messageQ;
 
 
 static Process_PCB * currentProcess;
+static bool finished = false;
 
 // --- Process methods --- // 
 void initializeProgram();
@@ -19,11 +20,23 @@ void terminateProgram();
 int prependToReadyQueue(Process_PCB * process);
 Process_PCB * trimFromReadyQueue(priority processPriority);
 
+int getCurrentProcessPID();
 
 // Simulation methods
 int createProcess(priority processPriority);
+
+// Forks a process, returns -1 on failure 
 int forkProcess();
+
+// Similar to kill, but does this on the current process only
+int exitProcess();
+
+// Remove process from the system entirely
+// - If the current process happens to be the init_process and
+// there are no more process left, terminate
 int killProcess(int pid);
+
+// Switches the current process up with ones from readyQs
 void quantum();
 
 // Sends a message to a process.

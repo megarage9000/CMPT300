@@ -1,5 +1,16 @@
 #include "processes.h"
 
+const char * actionResultToString(int result) {
+    switch(result) {
+        case FAILURE:
+            return "FAILURE";
+        case SUCCESS:
+            return "SUCCESS";
+        default:
+            return "UNDEFINED";
+    }
+}
+
 // --- Process PCB and Messages --- //
 
 Process_PCB initializeProcess(int pid, priority priority, state state) {
@@ -109,11 +120,14 @@ void freeMessage(void * message){
 // --- For List_Search ---- //
 
 // Process_PCB
+// - Find process with associated pid
 bool searchProcess(void * process, void * comparison) {
     int processPid = ((Process_PCB*)process)->pid;
     return processPid == *((int *)comparison);
 }
 
+// Looks for a specific process in a list. If found, remove item
+// and return, else return NULL
 Process_PCB * getProcessFromList(int pid, List * list) {
     List_first(list);
     Process_PCB * process = List_search(list,  searchProcess, ((void*)&pid));
@@ -131,12 +145,14 @@ bool searchMessageReceive(void * message, void * receivingPid) {
     return (messageReceivePid == receive);
 }
 
+// - For process messages that have the associated sending pid
 bool searchMessageSending(void * message, void * sendingPid){
     Process_Message * messagePtr = ((Process_Message *)message);
     int send = *((int *)sendingPid);
     return messagePtr->sendingPid == send;
 }
 
+// - Get a message with a given message COMPARATOR_FN
 Process_Message * getMessageFromList(int pid, List * list, COMPARATOR_FN compare){
     List_first(list);
     Process_Message * message = List_search(list, compare, ((void *)&pid));
@@ -232,6 +248,7 @@ Process_PCB * searchForProcess(int pid){
     }
 }
 
+// Checking if no processes exist
 bool ifNoMoreProcess(){
     for(int i = 0; i < LIST_MAX_NUM_NODES; i++) {
         if(processTracker[i] != NULL) {
@@ -240,6 +257,7 @@ bool ifNoMoreProcess(){
     }   
     return true;
 }
+
 
 bool isProcessBlocked(Process_PCB process){
     return (

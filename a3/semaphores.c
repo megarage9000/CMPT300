@@ -62,6 +62,9 @@ int semaphoreP(int id, Process_PCB * process){
 }
 
 int createSemaphore(int id, int sVal) {
+    if(id > NUM_SEMAPHORES - 1 && id < 0) {
+        return FAILURE;
+    }
     if(semaphores[id] == NULL) {
         semaphores[id] = (Semaphore *)malloc(sizeof(Semaphore));
         semaphores[id]->id = id;

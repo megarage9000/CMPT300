@@ -1,4 +1,4 @@
-#include "commands.h"
+#include "../commands.h"
 
 void testSemaphores() {
     int id = 0;
