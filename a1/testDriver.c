@@ -40,6 +40,7 @@ static void modFreeFn(void* pItem) {
     List* l = NULL;
     if (pItem != NULL) {
         freeCounter++;
+        printf("freeCounter = %d\n", freeCounter);
         l = (List*) pItem;
         List_free(l, simpleFreeFn);
     } else {
